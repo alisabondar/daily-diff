@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.demo-home/
+*.tgz
+.DS_Store
