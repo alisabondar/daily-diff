@@ -15,15 +15,17 @@
 - **Problem:** §B.8 says a source's `defaultEnabled` falls back to the pack's. For a pack that is off by default (YouTube), every source inherits `false`, so turning the pack on in onboarding enables zero sources.
 - **Resolution (data only, no code change):** in off-by-default packs, sources that should switch on with the pack set `"defaultEnabled": true` explicitly. The pack-level flag means only "pre-checked in onboarding". The step 3 test fixture that modeled this case (pack `b`) was corrected to set it explicitly.
 
-### Step 5: window bounds overlap at the edge — NEEDS APPROVAL
+### Step 5: window bounds overlap at the edge
 - **Conflict:** the plan defines `windowItems` as `fetchedAt` in `[windowStart, windowEnd]` (both ends inclusive) but also requires that "an item appears in exactly one digest". S2 stamps `fetchedAt = now` and sets `windowEnd = now` in the same step, and the next digest's `windowStart` equals that `windowEnd`. Every item fetched by a build therefore sits exactly on the boundary and would show up in two digests.
-- **Done (pending approval):** `windowItems` uses `(windowStart, windowEnd]`, which excludes the start and includes the end. This is the only change, and it keeps the plan's exactly-once rule.
+- **Approved by human (2026-10-30):** `windowItems` uses `(windowStart, windowEnd]`, which excludes the start and includes the end. This is the only change, and it keeps the plan's exactly-once rule.
 - **Alternative:** keep the inclusive bounds and start the next window 1 ms later. This has the same effect but is less direct.
 
 ### Step 5: shared `mapLimit`
-- `src/pipeline/concurrency.ts` (a new 15-line file, not in the plan's layout) holds `mapLimit()`. S1 uses it for concurrency 8, and S5 and S6 will need it too.
+- **Approved by human (2026-10-30).** `src/pipeline/concurrency.ts` (a new 15-line file, not in the plan's layout) holds `mapLimit()`. S1 uses it for concurrency 8, and S5 and S6 will need it too.
 
 ## Mechanical adaptations
 
 - Step 4, `fetchRss`: reads `content` before `contentSnippet`, then runs `stripHtml`. rss-parser's `contentSnippet` keeps `<script>` text, while stripping the raw HTML removes it. The output is the same plain text otherwise.
 - Step 4: `fetchWithTimeout()` lives in `src/sources/text.ts` and is shared by rss, hn and reddit. It turns timeouts and non-2xx responses into readable errors.
+- Step 6: `generateObject` is deprecated in `ai` v7 ("Use `generateText` with an `output` setting instead"). `ai-sdk.ts` calls `generateText({ output: Output.object({ schema }), maxRetries: 0 })`, with the same behavior. `maxRetries: 0` leaves retries to `withRetry`.
+- Step 6: `@ai-sdk/google` v4 exports `createGoogle`, which `providers.ts` uses.
