@@ -35,3 +35,26 @@ export async function fetchWithTimeout(url: string, opts: { fetchFn?: typeof fet
   if (!res.ok) throw new Error(`Request to ${new URL(url).host} failed: HTTP ${res.status}`);
   return res;
 }
+
+/** Rule 7: an LLM-chosen URL may be fetched only if it is https and not local, loopback, private or link-local. */
+export function isSafePublicUrl(u: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(u);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'https:') return false;
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local')) return false;
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])];
+    return !(a === 127 || a === 10 || a === 0 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254));
+  }
+  if (host.includes(':')) {
+    // IPv6 literal: loopback, unique-local fc00::/7, link-local fe80::/10, unspecified
+    return !(host === '::1' || host === '::' || /^f[cd]/.test(host) || /^fe[89ab]/.test(host));
+  }
+  return true;
+}

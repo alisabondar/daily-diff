@@ -77,3 +77,11 @@ export function setPacks(db: Db, enabledPackIds: string[], packs = loadPacks()):
     }
   });
 }
+
+export const Book = z.object({ title: z.string(), author: z.string(), concepts: z.array(z.string()) });
+export type Book = z.infer<typeof Book>;
+
+/** The concept pool for Learn (not feeds). */
+export function loadBooks(dir = PACKS_DIR): Book[] {
+  return z.array(Book).parse(JSON.parse(readFileSync(join(dir, 'books.json'), 'utf8')));
+}

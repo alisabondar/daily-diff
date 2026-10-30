@@ -154,3 +154,14 @@ export const feedback = sqliteTable('feedback', {
   kind: text('kind', { enum: ['less_like_this'] }).notNull(),
   createdAt: integer('created_at').notNull().$defaultFn(now),
 });
+
+// §B.4 category → section mapping
+export const HIGHLIGHT_SECTION_FOR: Partial<Record<Category, HighlightSection>> = {
+  model: 'models', tool: 'tools', headline: 'headlines', video: 'watch',
+};
+export function moreSectionFor(category: Category | null): MoreSection {
+  if (category === 'long-read') return 'long-reads';
+  if (category === 'podcast') return 'podcasts';
+  if (category === 'video') return 'videos';
+  return 'other';
+}
