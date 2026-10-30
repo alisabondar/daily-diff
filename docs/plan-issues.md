@@ -29,3 +29,4 @@
 - Step 4: `fetchWithTimeout()` lives in `src/sources/text.ts` and is shared by rss, hn and reddit. It turns timeouts and non-2xx responses into readable errors.
 - Step 6: `generateObject` is deprecated in `ai` v7 ("Use `generateText` with an `output` setting instead"). `ai-sdk.ts` calls `generateText({ output: Output.object({ schema }), maxRetries: 0 })`, with the same behavior. `maxRetries: 0` leaves retries to `withRetry`.
 - Step 6: `@ai-sdk/google` v4 exports `createGoogle`, which `providers.ts` uses.
+- Step 7: `src/pipeline/context.ts` (not in the plan's layout) is shared by S3–S7, like `mapLimit`. It holds `StageCtx` and three helpers: `callLlm` (withRetry plus usage totals), `newUsage`, and `finishStage` (adds usage to the digest and sets `stage` inside the stage's transaction, per step 12).
