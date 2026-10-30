@@ -1,7 +1,7 @@
-import { eq, sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import type { Config } from '../config.js';
 import type { Db } from '../db/client.js';
-import { digests } from '../db/schema.js';
+import { digests, items, sources, stories, storyItems } from '../db/schema.js';
 import { withRetry } from '../llm/retry.js';
 import type { Llm, LlmJsonOpts, LlmUsage } from '../llm/types.js';
 import type { Digest } from './s1-fetch.js';
@@ -36,4 +36,27 @@ export function finishStage(tx: Pick<Db, 'update'>, digestId: number, stage: num
     })
     .where(eq(digests.id, digestId))
     .run();
+}
+
+export type Story = typeof stories.$inferSelect;
+export type StoryItem = typeof items.$inferSelect & { source: typeof sources.$inferSelect };
+export type StoryWithItems = Story & { items: StoryItem[] };
+
+/** This digest's stories, each with its items (in item-id order) and their sources. */
+export function loadStories(db: Db, digestId: number): StoryWithItems[] {
+  const rows = db
+    .select({ story: stories, item: items, source: sources })
+    .from(stories)
+    .innerJoin(storyItems, eq(storyItems.storyId, stories.id))
+    .innerJoin(items, eq(items.id, storyItems.itemId))
+    .innerJoin(sources, eq(sources.id, items.sourceId))
+    .where(eq(stories.digestId, digestId))
+    .orderBy(asc(stories.id), asc(items.id))
+    .all();
+  const out = new Map<number, StoryWithItems>();
+  for (const { story, item, source } of rows) {
+    if (!out.has(story.id)) out.set(story.id, { ...story, items: [] });
+    out.get(story.id)!.items.push({ ...item, source });
+  }
+  return [...out.values()];
 }
