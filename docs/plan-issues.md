@@ -2,7 +2,7 @@
 
 ## Open
 
-### Step 12: order of checks in `ensureToday`
+### Step 12: order of checks in `ensureToday` — implemented as (a)
 - **Unclear:** item 0 (null `llmFactory` → raw digest, `errorCode = 'auth'`) is listed before item 1 (`!config.onboarded` → do nothing), and it doesn't say whether S1–S2 still run first.
 - **Options:** (a) check onboarded first, then lock / today's done digest, run S1–S2, and only then substitute the raw digest for S3–S7 when the Llm is null; (b) apply the numbered order literally.
 - **Recommendation:** (a). A raw digest needs window items, so S1–S2 must run, and a non-onboarded user should never get a build.
@@ -31,3 +31,5 @@
 - Step 6: `@ai-sdk/google` v4 exports `createGoogle`, which `providers.ts` uses.
 - Step 7: `src/pipeline/context.ts` (not in the plan's layout) is shared by S3–S7, like `mapLimit`. It holds `StageCtx` and three helpers: `callLlm` (withRetry plus usage totals), `newUsage`, and `finishStage` (adds usage to the digest and sets `stage` inside the stage's transaction, per step 12).
 - Step 9: `src/version.ts` (not in the plan's layout) reads the version from `package.json` in one place. It's used for the Reddit `User-Agent` and the CLI, and will be used by `backupIfUpgrading` at startup.
+- Step 12: `run.ts` also exports `startToday(deps)`, which returns `{ started, digestDate, done }` right away. `ensureToday` is `startToday` plus `await done`. Step 13's `POST /api/ensure` needs `started` before the build finishes.
+- Step 12: `redactKey(message, config)` in `config.ts` applies rule 7 to every error message stored on a digest.

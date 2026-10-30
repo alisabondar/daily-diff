@@ -54,3 +54,9 @@ export function resolveKey(config: Config): { key?: string; source: 'env' | 'con
   if (config.apiKey) return { key: config.apiKey, source: 'config' };
   return { source: 'none' };
 }
+
+/** Rule 7: replaces every occurrence of the active API key with [redacted]. */
+export function redactKey(message: string, config: Config): string {
+  const { key } = resolveKey(config);
+  return key ? message.split(key).join('[redacted]') : message;
+}

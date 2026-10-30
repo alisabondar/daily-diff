@@ -20,7 +20,8 @@
     "postbuild": "node -e \"const fs=require('fs');fs.mkdirSync('dist/packs',{recursive:true});for(const f of fs.existsSync('src/packs')?fs.readdirSync('src/packs'):[])if(f.endsWith('.json'))fs.copyFileSync('src/packs/'+f,'dist/packs/'+f)\"",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "demo": "node --import tsx scripts/seed-demo.ts && DAILY_DIFF_HOME=./.demo-home node --import tsx src/cli.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.92",
