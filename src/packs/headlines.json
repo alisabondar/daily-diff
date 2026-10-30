@@ -1,0 +1,36 @@
+{
+  "id": "headlines",
+  "name": "Tech Headlines",
+  "emoji": "📰",
+  "defaultEnabled": true,
+  "sources": [
+    {
+      "title": "Ars Technica",
+      "url": "https://arstechnica.com",
+      "feedUrl": "https://feeds.arstechnica.com/arstechnica/index",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "The Verge",
+      "url": "https://www.theverge.com",
+      "feedUrl": "https://www.theverge.com/rss/index.xml",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "TechCrunch",
+      "url": "https://techcrunch.com",
+      "feedUrl": "https://techcrunch.com/feed/",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "Stratechery",
+      "url": "https://stratechery.com",
+      "feedUrl": "https://stratechery.com/feed/",
+      "kind": "rss",
+      "type": "blog"
+    }
+  ]
+}

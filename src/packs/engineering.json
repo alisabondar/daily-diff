@@ -1,0 +1,85 @@
+{
+  "id": "engineering",
+  "name": "Engineering",
+  "emoji": "⚙️",
+  "defaultEnabled": true,
+  "sources": [
+    {
+      "title": "The Pragmatic Engineer",
+      "url": "https://newsletter.pragmaticengineer.com",
+      "feedUrl": "https://newsletter.pragmaticengineer.com/feed",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Will Larson (lethain.com)",
+      "url": "https://lethain.com",
+      "feedUrl": "https://lethain.com/feeds/",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Martin Fowler",
+      "url": "https://martinfowler.com",
+      "feedUrl": "https://martinfowler.com/feed.atom",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "ByteByteGo",
+      "url": "https://blog.bytebytego.com",
+      "feedUrl": "https://blog.bytebytego.com/feed",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Julia Evans",
+      "url": "https://jvns.ca",
+      "feedUrl": "https://jvns.ca/atom.xml",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Dan Luu",
+      "url": "https://danluu.com",
+      "feedUrl": "https://danluu.com/atom.xml",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Charity Majors",
+      "url": "https://charity.wtf",
+      "feedUrl": "https://charity.wtf/feed/",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "InfoQ",
+      "url": "https://www.infoq.com",
+      "feedUrl": "https://feed.infoq.com/",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "Cloudflare Blog",
+      "url": "https://blog.cloudflare.com",
+      "feedUrl": "https://blog.cloudflare.com/rss/",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Netflix Tech Blog",
+      "url": "https://netflixtechblog.com",
+      "feedUrl": "https://netflixtechblog.com/feed",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Medium: AI tag",
+      "url": "https://medium.com/tag/artificial-intelligence",
+      "feedUrl": "https://medium.com/feed/tag/artificial-intelligence",
+      "kind": "rss",
+      "type": "blog"
+    }
+  ]
+}

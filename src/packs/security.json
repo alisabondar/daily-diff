@@ -1,0 +1,24 @@
+{
+  "id": "security",
+  "name": "Security",
+  "emoji": "🔐",
+  "defaultEnabled": false,
+  "sources": [
+    {
+      "title": "Krebs on Security",
+      "url": "https://krebsonsecurity.com",
+      "feedUrl": "https://krebsonsecurity.com/feed/",
+      "kind": "rss",
+      "type": "news",
+      "defaultEnabled": false
+    },
+    {
+      "title": "Schneier on Security",
+      "url": "https://www.schneier.com",
+      "feedUrl": "https://www.schneier.com/feed/atom/",
+      "kind": "rss",
+      "type": "blog",
+      "defaultEnabled": false
+    }
+  ]
+}

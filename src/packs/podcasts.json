@@ -1,0 +1,32 @@
+{
+  "id": "podcasts",
+  "name": "Podcasts",
+  "emoji": "🎧",
+  "defaultEnabled": false,
+  "sources": [
+    {
+      "title": "Dwarkesh Podcast",
+      "url": "https://www.dwarkesh.com",
+      "feedUrl": "https://www.dwarkesh.com/feed",
+      "kind": "rss",
+      "type": "podcast",
+      "defaultEnabled": false
+    },
+    {
+      "title": "The Changelog",
+      "url": "https://changelog.com/podcast",
+      "feedUrl": "https://changelog.com/podcast/feed",
+      "kind": "rss",
+      "type": "podcast",
+      "defaultEnabled": false
+    },
+    {
+      "title": "Software Engineering Daily",
+      "url": "https://softwareengineeringdaily.com",
+      "feedUrl": "https://softwareengineeringdaily.com/category/podcast/feed",
+      "kind": "rss",
+      "type": "podcast",
+      "defaultEnabled": false
+    }
+  ]
+}

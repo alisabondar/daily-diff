@@ -1,0 +1,37 @@
+{
+  "id": "tools",
+  "name": "Tools & Launches",
+  "emoji": "🛠",
+  "defaultEnabled": true,
+  "sources": [
+    {
+      "title": "Show HN",
+      "url": "https://news.ycombinator.com/show",
+      "feedUrl": "hn:show_hn",
+      "kind": "hn",
+      "type": "community",
+      "hnTags": "show_hn"
+    },
+    {
+      "title": "Product Hunt",
+      "url": "https://www.producthunt.com",
+      "feedUrl": "https://www.producthunt.com/feed",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "GitHub Blog",
+      "url": "https://github.blog",
+      "feedUrl": "https://github.blog/feed/",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "GitHub Changelog",
+      "url": "https://github.blog/changelog/",
+      "feedUrl": "https://github.blog/changelog/feed/",
+      "kind": "rss",
+      "type": "news"
+    }
+  ]
+}

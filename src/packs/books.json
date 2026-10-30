@@ -1,0 +1,75 @@
+[
+  {
+    "title": "Designing Data-Intensive Applications",
+    "author": "Martin Kleppmann",
+    "concepts": [
+      "write-ahead-log: append-only log of changes written before applying them",
+      "leader-follower-replication: one node accepts writes and streams them to replicas",
+      "multi-leader-replication: several nodes accept writes and reconcile conflicts",
+      "leaderless-replication: clients write to several replicas and read with quorums",
+      "quorum-reads-writes: overlapping read and write sets guarantee freshness",
+      "replication-lag: delay before a follower reflects the leader's writes",
+      "read-your-writes-consistency: a user always sees their own updates",
+      "consistent-hashing: partitioning keys so few move when nodes change",
+      "partitioning-by-key-range: splitting data into sorted key ranges",
+      "secondary-indexes-partitioning: local versus global indexes across partitions",
+      "lsm-trees: log-structured merge trees for write-heavy storage",
+      "b-trees: page-oriented balanced trees for indexing",
+      "column-oriented-storage: storing each column together for analytics",
+      "schema-evolution: changing encodings while keeping compatibility",
+      "acid-transactions: atomicity, consistency, isolation, durability",
+      "snapshot-isolation: each transaction reads a consistent snapshot",
+      "write-skew: anomalies from concurrent decisions on stale reads",
+      "two-phase-commit: coordinating an atomic commit across nodes",
+      "linearizability: operations appear to happen at one instant",
+      "consensus: getting nodes to agree on a value despite faults",
+      "exactly-once-semantics: effects applied once despite retries",
+      "change-data-capture: streaming a database's changes to other systems",
+      "event-sourcing: storing state as an immutable log of events",
+      "batch-vs-stream-processing: bounded versus unbounded data processing"
+    ]
+  },
+  {
+    "title": "Staff Engineer",
+    "author": "Will Larson",
+    "concepts": [
+      "staff-archetypes: tech lead, architect, solver and right hand roles",
+      "engineering-strategy: written direction that resolves recurring decisions",
+      "technical-vision: a multi-year picture of where systems should go",
+      "managing-technical-quality: raising quality through targeted investments",
+      "sponsorship: senior people actively opening doors for others",
+      "staying-aligned-with-authority: keeping leaders informed to keep trust",
+      "writing-design-documents: structured proposals for significant changes",
+      "the-staff-project: owning a long, ambiguous, high-impact effort",
+      "glue-work: the invisible coordination that keeps teams shipping",
+      "getting-in-the-room: earning a seat where decisions get made",
+      "operating-at-staff: balancing coding, mentoring and organizational work",
+      "promotion-packets: documenting impact for a staff promotion",
+      "finding-sponsors: building relationships that advocate for your work",
+      "work-on-what-matters: choosing problems with leverage over busywork",
+      "influence-without-authority: leading through persuasion not hierarchy"
+    ]
+  },
+  {
+    "title": "An Elegant Puzzle",
+    "author": "Will Larson",
+    "concepts": [
+      "team-sizing: keeping teams between six and eight engineers",
+      "sustaining-vs-growth-teams: teams that keep up versus teams that advance",
+      "systems-thinking: modeling organizations as stocks and flows",
+      "technical-debt-migrations: running migrations that actually finish",
+      "de-risk-migrations: proving a migration on the hardest cases first",
+      "work-on-the-backlog: falling-behind, treading-water, repaying, innovating",
+      "succession-planning: preparing others to take over your role",
+      "career-ladders: explicit expectations for each level",
+      "performance-calibration: comparing assessments across managers",
+      "engineering-metrics: measuring health without gaming",
+      "incident-postmortems: blameless analysis to prevent recurrences",
+      "product-management-partnership: engineering and product sharing planning",
+      "goals-and-baselines: stating targets relative to current values",
+      "model-reorgs: deciding when and how to restructure teams",
+      "interviewing-loops: consistent, calibrated hiring processes",
+      "opportunity-cost: the value of what you chose not to do"
+    ]
+  }
+]

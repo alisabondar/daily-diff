@@ -1,0 +1,7 @@
+{
+  "id": "youtube",
+  "name": "YouTube",
+  "emoji": "🎬",
+  "defaultEnabled": false,
+  "sources": []
+}

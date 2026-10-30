@@ -1,0 +1,37 @@
+{
+  "id": "community",
+  "name": "Community",
+  "emoji": "🌐",
+  "defaultEnabled": true,
+  "sources": [
+    {
+      "title": "Hacker News front page",
+      "url": "https://news.ycombinator.com",
+      "feedUrl": "hn:front_page",
+      "kind": "hn",
+      "type": "community",
+      "hnTags": "front_page"
+    },
+    {
+      "title": "r/LocalLLaMA",
+      "url": "https://www.reddit.com/r/LocalLLaMA/",
+      "feedUrl": "https://www.reddit.com/r/LocalLLaMA/top/.rss?t=day",
+      "kind": "rss",
+      "type": "community"
+    },
+    {
+      "title": "r/MachineLearning",
+      "url": "https://www.reddit.com/r/MachineLearning/",
+      "feedUrl": "https://www.reddit.com/r/MachineLearning/top/.rss?t=day",
+      "kind": "rss",
+      "type": "community"
+    },
+    {
+      "title": "r/programming",
+      "url": "https://www.reddit.com/r/programming/",
+      "feedUrl": "https://www.reddit.com/r/programming/top/.rss?t=day",
+      "kind": "rss",
+      "type": "community"
+    }
+  ]
+}

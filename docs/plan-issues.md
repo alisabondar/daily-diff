@@ -11,6 +11,10 @@
 - **Conflict:** §B.1/step 0 say `build` is `tsc -p tsconfig.json` and `tsconfig.json` also covers `tests/` and `scripts/`. Emitting from that config puts the CLI at `dist/src/cli.js`, which breaks `bin: dist/cli.js`.
 - **Approved by human (2026-10-29):** `tsconfig.json` covers src + tests + scripts and is used for `typecheck`; a small `tsconfig.build.json` extends it with `rootDir: src` and only `src/**/*.ts`, and `build` uses it.
 
+### Step 3: off-by-default packs would enable nothing
+- **Problem:** §B.8 says a source's `defaultEnabled` falls back to the pack's. For a pack that is off by default (YouTube), every source inherits `false`, so turning the pack on in onboarding enables zero sources.
+- **Resolution (data only, no code change):** in off-by-default packs, sources that should switch on with the pack set `"defaultEnabled": true` explicitly. The pack-level flag means only "pre-checked in onboarding". The step 3 test fixture that modeled this case (pack `b`) was corrected to set it explicitly.
+
 ## Mechanical adaptations
 
 (none yet)

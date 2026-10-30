@@ -1,0 +1,71 @@
+{
+  "id": "ai-news",
+  "name": "AI News",
+  "emoji": "🧠",
+  "defaultEnabled": true,
+  "sources": [
+    {
+      "title": "Simon Willison",
+      "url": "https://simonwillison.net",
+      "feedUrl": "https://simonwillison.net/atom/everything/",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Latent Space",
+      "url": "https://www.latent.space",
+      "feedUrl": "https://www.latent.space/feed",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Import AI",
+      "url": "https://importai.substack.com",
+      "feedUrl": "https://importai.substack.com/feed",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Interconnects",
+      "url": "https://www.interconnects.ai",
+      "feedUrl": "https://www.interconnects.ai/feed",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "One Useful Thing",
+      "url": "https://www.oneusefulthing.org",
+      "feedUrl": "https://www.oneusefulthing.org/feed",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Ben's Bites",
+      "url": "https://www.bensbites.com",
+      "feedUrl": "https://www.bensbites.com/feed",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "Hugging Face Blog",
+      "url": "https://huggingface.co/blog",
+      "feedUrl": "https://huggingface.co/blog/feed.xml",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "OpenAI News",
+      "url": "https://openai.com/news",
+      "feedUrl": "https://openai.com/news/rss.xml",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "Google DeepMind",
+      "url": "https://deepmind.google/discover/blog/",
+      "feedUrl": "https://deepmind.google/blog/rss.xml",
+      "kind": "rss",
+      "type": "news"
+    }
+  ]
+}
