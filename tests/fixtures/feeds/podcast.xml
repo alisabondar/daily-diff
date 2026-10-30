@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>Example Pod</title>
+    <link>https://pod.example.com</link>
+    <item>
+      <title>Episode 42: Agents</title>
+      <link>https://pod.example.com/42</link>
+      <itunes:author>Pod Host</itunes:author>
+      <pubDate>Wed, 28 Oct 2026 06:00:00 GMT</pubDate>
+      <description>We talk about agents.</description>
+      <enclosure url="https://cdn.example.com/ep42.mp3" length="1000" type="audio/mpeg"/>
+    </item>
+  </channel>
+</rss>

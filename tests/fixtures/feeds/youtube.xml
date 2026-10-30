@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+  <title>Example Channel</title>
+  <link rel="alternate" href="https://www.youtube.com/channel/UCexample"/>
+  <entry>
+    <id>yt:video:abc123</id>
+    <yt:videoId>abc123</yt:videoId>
+    <title>Demo: new model</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=abc123"/>
+    <author><name>Example Channel</name></author>
+    <published>2026-10-28T15:00:00+00:00</published>
+    <updated>2026-10-28T15:00:00+00:00</updated>
+    <media:group><media:description>Watch the demo.</media:description></media:group>
+  </entry>
+</feed>

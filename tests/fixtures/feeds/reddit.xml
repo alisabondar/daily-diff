@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>top scoring links : LocalLLaMA</title>
+  <entry>
+    <author><name>/u/someone</name></author>
+    <content type="html">&lt;p&gt;Benchmarks inside&lt;/p&gt;</content>
+    <id>t3_xyz</id>
+    <link href="https://www.reddit.com/r/LocalLLaMA/comments/xyz/new_local_model/"/>
+    <updated>2026-10-28T09:00:00+00:00</updated>
+    <published>2026-10-28T09:00:00+00:00</published>
+    <title>New local model released</title>
+  </entry>
+</feed>

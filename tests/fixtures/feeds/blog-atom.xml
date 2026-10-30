@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Atom Blog</title>
+  <link href="https://atom.example.org/"/>
+  <id>https://atom.example.org/</id>
+  <updated>2026-10-28T12:00:00Z</updated>
+  <entry>
+    <title>Notes on caching</title>
+    <link href="https://atom.example.org/2026/caching"/>
+    <id>tag:atom.example.org,2026:caching</id>
+    <updated>2026-10-28T12:00:00Z</updated>
+    <author><name>Grace Hopper</name></author>
+    <summary type="html">&lt;p&gt;Caches are hard.&lt;/p&gt;</summary>
+  </entry>
+</feed>
