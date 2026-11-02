@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, type Status } from './api';
+import { Archive } from './pages/Archive';
 import { Today } from './pages/Today';
 
 function useHash() {
@@ -73,6 +74,8 @@ export function App() {
           <Today status={status} />
         ) : route.page === 'digest' ? (
           <Today status={status} date={route.date} />
+        ) : route.page === 'archive' ? (
+          <Archive />
         ) : (
           <h1 className="text-2xl font-semibold capitalize">{route.page}</h1>
         )}
