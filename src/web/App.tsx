@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, type Status } from './api';
 import { Archive } from './pages/Archive';
 import { Favorites } from './pages/Favorites';
+import { Onboarding } from './pages/Onboarding';
 import { Settings } from './pages/Settings';
 import { Sources } from './pages/Sources';
 import { Today } from './pages/Today';
@@ -39,15 +40,19 @@ export function App() {
   const path = useHash();
   const [status, setStatus] = useState<Status | null>(null);
 
+  const pollRef = useRef<() => Promise<void>>(async () => {});
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
     const poll = async () => {
+      clearTimeout(timer);
       const s = await (await api.status.$get()).json();
       if (stopped) return;
       setStatus(s);
       if (s.progress.running) timer = setTimeout(poll, 2000);
     };
+    pollRef.current = poll;
     api.ensure.$post().then(poll);
     return () => {
       stopped = true;
@@ -86,7 +91,12 @@ export function App() {
         ) : route.page === 'settings' ? (
           <Settings />
         ) : (
-          <h1 className="text-2xl font-semibold capitalize">{route.page}</h1>
+          <Onboarding
+            onFinish={async () => {
+              await pollRef.current();
+              window.location.hash = '#/';
+            }}
+          />
         )}
       </main>
     </div>

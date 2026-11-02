@@ -2,6 +2,11 @@
 
 ## Open
 
+### Step 21: the real-key onboarding run hasn't been done
+- **Problem:** step 21's Verify requires a manual run from an empty `DAILY_DIFF_HOME` through to a built digest with a real key. No provider key is available in this environment (no env keys, no local Ollama). Step 23 needs real builds too.
+- **Done instead:** a full run from an empty home. A fake key fails Test connection (the provider returned "invalid x-api-key"), and Next stays disabled. With only the test response stubbed in the page, profile chips, Skip/Next and the pre-checked default packs all work. Finish saves the packs, completes onboarding and lands on Today with the progress strip. The real first build ran against live feeds and ended as a raw digest (auth banner, 141 items, 2 failed sources).
+- **Needed:** the human repeats the run with a real key (or provides one) before step 21 counts as verified.
+
 ### Step 12: order of checks in `ensureToday` — implemented as (a)
 - **Unclear:** item 0 (null `llmFactory` → raw digest, `errorCode = 'auth'`) is listed before item 1 (`!config.onboarded` → do nothing), and it doesn't say whether S1–S2 still run first.
 - **Options:** (a) check onboarded first, then lock / today's done digest, run S1–S2, and only then substitute the raw digest for S3–S7 when the Llm is null; (b) apply the numbered order literally.
