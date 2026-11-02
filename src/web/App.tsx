@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, type Status } from './api';
 import { Archive } from './pages/Archive';
 import { Favorites } from './pages/Favorites';
+import { Sources } from './pages/Sources';
 import { Today } from './pages/Today';
 
 function useHash() {
@@ -79,6 +80,8 @@ export function App() {
           <Archive />
         ) : route.page === 'favorites' ? (
           <Favorites />
+        ) : route.page === 'sources' ? (
+          <Sources />
         ) : (
           <h1 className="text-2xl font-semibold capitalize">{route.page}</h1>
         )}
