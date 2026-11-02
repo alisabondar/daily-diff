@@ -33,3 +33,6 @@
 - Step 9: `src/version.ts` (not in the plan's layout) reads the version from `package.json` in one place. It's used for the Reddit `User-Agent` and the CLI, and will be used by `backupIfUpgrading` at startup.
 - Step 12: `run.ts` also exports `startToday(deps)`, which returns `{ started, digestDate, done }` right away. `ensureToday` is `startToday` plus `await done`. Step 13's `POST /api/ensure` needs `started` before the build finishes.
 - Step 12: `redactKey(message, config)` in `config.ts` applies rule 7 to every error message stored on a digest.
+- Step 13: `paths()` treats an empty `DAILY_DIFF_HOME` the same as an unset one (`||` instead of `??`). Before this fix, `DAILY_DIFF_HOME=` put the data files in the current directory.
+- Step 13: `src/server/deps.ts`, `validate.ts` and `stories.ts` are small server helpers (the deps type, Zod body/param parsing that returns a 400, and the story JSON shape) shared by `routes/*.ts`.
+- Step 13: the smoke test now runs `cli.ts --version`, because the CLI starts the server by default. Step 0 said the version-only CLI was "for now".
