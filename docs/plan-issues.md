@@ -37,3 +37,6 @@
 - Step 13: `src/server/deps.ts`, `validate.ts` and `stories.ts` are small server helpers (the deps type, Zod body/param parsing that returns a 400, and the story JSON shape) shared by `routes/*.ts`.
 - Step 13: the smoke test now runs `cli.ts --version`, because the CLI starts the server by default. Step 0 said the version-only CLI was "for now".
 - Step 15: the Vite dev proxy key changed from `/api` to `/api/`. The prefix `/api` also matched the module `/api.ts`, so Hono served it as the SPA's HTML and the shell never loaded.
+- Step 16: the plan's `components/Markdown.tsx` and `components/markdown.ts` differ only in case. On macOS's case-insensitive filesystem, Vite resolved `./Markdown` to `markdown.ts`. Imports of the two files now use explicit `.tsx`/`.ts` extensions, and `tsconfig.web.json` sets `allowImportingTsExtensions` (it's already `noEmit`).
+- Step 16: the routes validate bodies inside the handler, so `hc` doesn't type `json`. `api.ts` exports `jsonBody()`, which sends the body through `init`.
+- Step 16: `parseMarkdown` keeps a link as plain text unless its href is `http(s)`. This stops `javascript:` links in model output, in line with "escape all HTML".

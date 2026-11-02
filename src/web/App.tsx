@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { api } from './api';
-
-type Status = Awaited<ReturnType<Awaited<ReturnType<typeof api.status.$get>>['json']>>;
+import { api, type Status } from './api';
+import { Today } from './pages/Today';
 
 function useHash() {
   const [hash, setHash] = useState(window.location.hash);
@@ -68,7 +67,15 @@ export function App() {
         ))}
       </nav>
       <main className="mx-auto max-w-3xl px-6 py-8 leading-relaxed">
-        {route ? <h1 className="text-2xl font-semibold capitalize">{route.page === 'digest' ? route.date : route.page}</h1> : <p>Not found.</p>}
+        {!route ? (
+          <p>Not found.</p>
+        ) : !status ? null : route.page === 'today' ? (
+          <Today status={status} />
+        ) : route.page === 'digest' ? (
+          <Today status={status} date={route.date} />
+        ) : (
+          <h1 className="text-2xl font-semibold capitalize">{route.page}</h1>
+        )}
       </main>
     </div>
   );
