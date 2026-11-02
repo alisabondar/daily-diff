@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { SourceType, sources } from '../../db/schema.js';
 import { loadPacks, setPacks } from '../../packs/index.js';
+import { discoverFeed } from '../../sources/discover.js';
 import type { AppDeps } from '../deps.js';
 import { BadRequest, body, parse } from '../validate.js';
 
@@ -10,14 +11,19 @@ const Id = z.coerce.number().int().positive();
 const NewSource = z.object({ feedUrl: z.string().url(), title: z.string().trim().min(1), url: z.string().url(), type: SourceType });
 const PatchSource = z.object({ enabled: z.boolean().optional(), title: z.string().trim().min(1).optional(), type: SourceType.optional() });
 const PostPacks = z.object({ enabled: z.array(z.string()) });
+const Discover = z.object({ url: z.string().min(1) });
 
-export function sourceRoutes({ db }: AppDeps) {
+export function sourceRoutes({ db, fetchFn }: AppDeps) {
   return new Hono()
     .get('/sources', (c) => c.json(db.select().from(sources).orderBy(sources.pack, sources.title).all()))
     .post('/sources', async (c) => {
       const s = await body(c, NewSource);
       if (db.select().from(sources).where(eq(sources.feedUrl, s.feedUrl)).get()) throw new BadRequest('That feed is already added.');
       return c.json(db.insert(sources).values({ ...s, kind: 'rss', pack: null, enabled: true }).returning().get());
+    })
+    .post('/sources/discover', async (c) => {
+      const { url } = await body(c, Discover);
+      return c.json(await discoverFeed(url, { fetchFn }));
     })
     .patch('/sources/:id', async (c) => {
       const id = parse(Id, c.req.param('id'));

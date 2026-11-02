@@ -257,3 +257,11 @@ test('startup binds the server to 127.0.0.1', async () => {
   expect(loadConfig().lastRunVersion).toBeDefined();
   close();
 });
+
+test('POST /api/sources/discover returns the discovery result; 400 without url', async () => {
+  const s = setup();
+  const app = createApp({ ...s.deps, fetchFn: fakeFetch({ 'https://pod.dev/rss': fixture('feeds/podcast.xml') }) });
+  const res = await app.request('/api/sources/discover', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://pod.dev/rss' }) });
+  expect(await res.json()).toMatchObject({ found: true, feedUrl: 'https://pod.dev/rss', suggestedType: 'podcast' });
+  expect((await s.req('POST', '/api/sources/discover', {})).status).toBe(400);
+});
