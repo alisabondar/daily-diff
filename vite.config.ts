@@ -6,5 +6,5 @@ export default defineConfig({
   root: 'src/web',
   plugins: [react(), tailwindcss()],
   build: { outDir: '../../dist/web', emptyOutDir: true },
-  server: { proxy: { '/api': 'http://127.0.0.1:4242' } },
+  server: { proxy: { '/api/': 'http://127.0.0.1:4242' } },
 });

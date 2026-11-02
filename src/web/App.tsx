@@ -1,0 +1,75 @@
+import { useEffect, useState } from 'react';
+import { api } from './api';
+
+type Status = Awaited<ReturnType<Awaited<ReturnType<typeof api.status.$get>>['json']>>;
+
+function useHash() {
+  const [hash, setHash] = useState(window.location.hash);
+  useEffect(() => {
+    const onChange = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', onChange);
+    return () => window.removeEventListener('hashchange', onChange);
+  }, []);
+  return hash.replace(/^#/, '') || '/';
+}
+
+type Route = { page: 'today' } | { page: 'digest'; date: string } | { page: 'archive' | 'favorites' | 'sources' | 'settings' | 'onboarding' };
+
+function match(path: string): Route | null {
+  if (path === '/') return { page: 'today' };
+  const d = path.match(/^\/d\/(\d{4}-\d{2}-\d{2})$/);
+  if (d) return { page: 'digest', date: d[1] };
+  const p = path.slice(1);
+  if (p === 'archive' || p === 'favorites' || p === 'sources' || p === 'settings' || p === 'onboarding') return { page: p };
+  return null;
+}
+
+const NAV = [
+  ['#/', 'Today'],
+  ['#/archive', 'Archive'],
+  ['#/favorites', 'Favorites'],
+  ['#/sources', 'Sources'],
+  ['#/settings', 'Settings'],
+] as const;
+
+export function App() {
+  const path = useHash();
+  const [status, setStatus] = useState<Status | null>(null);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+    const poll = async () => {
+      const s = await (await api.status.$get()).json();
+      if (stopped) return;
+      setStatus(s);
+      if (s.progress.running) timer = setTimeout(poll, 2000);
+    };
+    api.ensure.$post().then(poll);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const route = match(path);
+  useEffect(() => {
+    if (status && !status.onboarded && route?.page !== 'onboarding') window.location.hash = '#/onboarding';
+  }, [status, route?.page]);
+
+  return (
+    <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <nav className="mx-auto flex max-w-3xl gap-6 px-6 py-5 text-sm">
+        <span className="font-semibold">Daily Diff</span>
+        {NAV.map(([href, label]) => (
+          <a key={href} href={href} className={`hover:underline ${'#' + path === href ? 'font-semibold' : 'text-neutral-500'}`}>
+            {label}
+          </a>
+        ))}
+      </nav>
+      <main className="mx-auto max-w-3xl px-6 py-8 leading-relaxed">
+        {route ? <h1 className="text-2xl font-semibold capitalize">{route.page === 'digest' ? route.date : route.page}</h1> : <p>Not found.</p>}
+      </main>
+    </div>
+  );
+}
