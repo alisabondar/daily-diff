@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, type Status } from './api';
 import { Archive } from './pages/Archive';
 import { Favorites } from './pages/Favorites';
+import { Settings } from './pages/Settings';
 import { Sources } from './pages/Sources';
 import { Today } from './pages/Today';
 
@@ -82,6 +83,8 @@ export function App() {
           <Favorites />
         ) : route.page === 'sources' ? (
           <Sources />
+        ) : route.page === 'settings' ? (
+          <Settings />
         ) : (
           <h1 className="text-2xl font-semibold capitalize">{route.page}</h1>
         )}
