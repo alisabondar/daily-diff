@@ -103,3 +103,14 @@ test('ai-sdk: picks the tier model, validates output and reports usage', async (
   expect(seen).toEqual(['strong-model']);
   await expect(new AiSdkLlm(models, async () => ({ output: { ok: 1 }, usage: {} })).json(opts)).rejects.toMatchObject({ code: 'llm' });
 });
+
+test('ai-sdk: passes the configured effort as `reasoning`, and omits it when unset', async () => {
+  const seen: unknown[] = [];
+  const call: ModelCall = async ({ reasoning }) => {
+    seen.push(reasoning);
+    return { output: { ok: true }, usage: {} };
+  };
+  await new AiSdkLlm(models, call, 'low').json(opts);
+  await new AiSdkLlm(models, call).json(opts);
+  expect(seen).toEqual(['low', undefined]);
+});

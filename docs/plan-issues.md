@@ -2,6 +2,13 @@
 
 ## Open
 
+### Change (2026-11-03): `./.env`, `LLM_*` overrides and `LLM_EFFORT`
+- **Requested and approved by human (2026-11-03):** the human keeps `.env` in the repo folder (`Projects/daily-diff/.env`) with `LLM_PROVIDER`, `LLM_MODEL`, `LLM_EFFORT`, the key and the region. Answers: env overrides the app, and effort is passed to the model.
+- **Lookup order for any variable:** real environment, then `./.env` in the working directory, then `$DAILY_DIFF_HOME/.env`. Each lookup re-reads the files.
+- **Overrides:** `LLM_PROVIDER` → `provider`; `LLM_MODEL` → `strongModel` and `fastModel`; `LLM_FAST_MODEL` (optional) → `fastModel`; `LLM_EFFORT` → `effort`. These win over config.json. Settings shows the overridden fields as read-only ("set in .env"). Invalid values are ignored and listed in Settings.
+- **Effort:** a new `Config.effort` (`provider-default|none|minimal|low|medium|high|xhigh|max`, the `reasoning` call option of `ai` v7, checked in `node_modules/@ai-sdk/provider` types) is passed as `generateText({ reasoning })` on every call. It can only be set through env, and `PUT /api/settings` rejects it.
+- **Still blocked:** `LLM_PROVIDER=bedrock` with `AWS_BEARER_TOKEN_BEDROCK` + `AWS_REGION` needs `@ai-sdk/amazon-bedrock`, and npm is blocked in this sandbox. Until it's installed, `bedrock` shows as an unsupported `LLM_PROVIDER` value.
+
 ### Change (2026-11-03): API keys only from the environment or `$DAILY_DIFF_HOME/.env`
 - **Requested and approved by human (2026-11-03):** remove in-app key entry. Keys come from real env vars, or from a `.env` file in the data directory (`~/.daily-diff/.env` by default). Real env vars win over the file.
 - **Changes the plan:** §B.6 drops `apiKey` from config.json; step 13's `PUT /api/settings` no longer accepts `apiKey` (it now returns 400) and `POST /api/settings/test` no longer takes one; `keySource` becomes `env | file | none`; and `providers[]` reports each provider's `keySource` instead of `envKeyPresent`. Steps 20/21 show "Using key from $VAR" (env), "Using $VAR from <path>" (file), or the line to add to the file, with no key input. `GET /api/settings` also returns `envFile` (the path).

@@ -1,21 +1,22 @@
 import { generateText, Output, type LanguageModel } from 'ai';
 import type { z } from 'zod';
+import type { Effort } from '../config.js';
 import type { Llm, LlmJsonOpts, LlmUsage } from './types.js';
 import { LlmError } from './types.js';
 
 export interface ModelCall {
-  (opts: { model: LanguageModel; system: string; prompt: string; schema: z.ZodType<unknown> }): Promise<{ output: unknown; usage: { inputTokens?: number; outputTokens?: number } }>;
+  (opts: { model: LanguageModel; system: string; prompt: string; schema: z.ZodType<unknown>; reasoning?: Effort }): Promise<{ output: unknown; usage: { inputTokens?: number; outputTokens?: number } }>;
 }
 
 const AUTH_STATUSES = new Set([401, 402, 403]);
 
 export class AiSdkLlm implements Llm {
-  constructor(private models: { fast: LanguageModel; strong: LanguageModel }, private call: ModelCall = defaultCall) {}
+  constructor(private models: { fast: LanguageModel; strong: LanguageModel }, private call: ModelCall = defaultCall, private effort?: Effort) {}
 
   async json<T>({ tier, system, prompt, schema }: LlmJsonOpts<T>): Promise<{ data: T; usage: LlmUsage }> {
     let result: Awaited<ReturnType<ModelCall>>;
     try {
-      result = await this.call({ model: this.models[tier], system, prompt, schema });
+      result = await this.call({ model: this.models[tier], system, prompt, schema, ...(this.effort ? { reasoning: this.effort } : {}) });
     } catch (err) {
       const status = (err as { statusCode?: number })?.statusCode;
       const message = (err as Error)?.message ?? String(err);
@@ -30,7 +31,7 @@ export class AiSdkLlm implements Llm {
 
 // generateObject is deprecated in ai v7; generateText + Output.object is its replacement.
 // maxRetries: 0 because withRetry() owns retries.
-export const defaultCall: ModelCall = async ({ model, system, prompt, schema }) => {
-  const res = await generateText({ model, system, prompt, output: Output.object({ schema }), maxRetries: 0 });
+export const defaultCall: ModelCall = async ({ model, system, prompt, schema, reasoning }) => {
+  const res = await generateText({ model, system, prompt, output: Output.object({ schema }), maxRetries: 0, reasoning });
   return { output: res.output, usage: res.usage };
 };

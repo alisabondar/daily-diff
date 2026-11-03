@@ -6,28 +6,37 @@ A local-first daily AI & tech briefing.
 
 ## AI setup
 
-Daily Diff never asks for your API key in the browser, and never stores it in `config.json`. It reads the key from an environment variable, or from a `.env` file in its data directory:
+Daily Diff never asks for your API key in the browser, and never stores it in `config.json`. Everything is read from environment variables, which you can put in a `.env` file. It looks in this order, and the first match wins:
 
+1. variables set in your shell
+2. `.env` in the folder you start Daily Diff from (e.g. the repo root when developing)
+3. `~/.daily-diff/.env` (or `$DAILY_DIFF_HOME/.env`), for `npx daily-diff` from anywhere
+
+`.env` files are re-read on every lookup, so edits apply without a restart. The repo's `.gitignore` already excludes `.env`.
+
+### Variables
+
+| Variable | Required | Meaning |
+|---|---|---|
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY` / `OPENROUTER_API_KEY` | yes, for that provider | API key (Ollama needs none) |
+| `LLM_PROVIDER` | no | `anthropic`, `openai`, `google`, `openrouter` or `ollama`. Overrides Settings |
+| `LLM_MODEL` | no | Model for every stage. Overrides both model fields in Settings |
+| `LLM_FAST_MODEL` | no | A cheaper model for the light stages (grouping, scoring). Defaults to `LLM_MODEL` |
+| `LLM_EFFORT` | no | Reasoning effort: `provider-default`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max` |
+
+Example:
+
+```bash
+cat >> .env <<'ENV'
+LLM_PROVIDER=anthropic
+LLM_MODEL=claude-sonnet-5-5
+LLM_FAST_MODEL=claude-haiku-5-5
+LLM_EFFORT=low
+ANTHROPIC_API_KEY=your-key-here
+ENV
+chmod 600 .env
 ```
-~/.daily-diff/.env        # or $DAILY_DIFF_HOME/.env
-```
 
-1. Pick a provider and add its key to that file. Only the line for your provider is needed:
+Settings and onboarding show where each value came from, mark the overridden fields "set in .env", and warn about values they ignore. **Test connection** checks the key.
 
-   | Provider | Variable |
-   |---|---|
-   | Anthropic | `ANTHROPIC_API_KEY` |
-   | OpenAI | `OPENAI_API_KEY` |
-   | Google | `GOOGLE_GENERATIVE_AI_API_KEY` |
-   | OpenRouter | `OPENROUTER_API_KEY` |
-   | Ollama | none (set the base URL in the app; default `http://localhost:11434/v1`) |
-
-   ```bash
-   mkdir -p ~/.daily-diff
-   echo 'ANTHROPIC_API_KEY=your-key-here' >> ~/.daily-diff/.env
-   chmod 600 ~/.daily-diff/.env
-   ```
-
-2. Start Daily Diff and choose the same provider in onboarding (or Settings). It shows where the key was found, and **Test connection** checks it. Edits to `.env` apply without a restart.
-
-A variable set in your shell takes priority over the same name in `.env`. The file lives outside any project folder, so it can't be committed by accident. Treat it like any other secret.
+> Amazon Bedrock (`LLM_PROVIDER=bedrock` with `AWS_BEARER_TOKEN_BEDROCK` and `AWS_REGION`) isn't supported yet. Until it is, Settings shows it as an ignored value.

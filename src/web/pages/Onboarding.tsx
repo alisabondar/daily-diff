@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { InferResponseType } from 'hono/client';
 import { api, jsonBody } from '../api';
-import { field, formFrom, PROFILE_PLACEHOLDER, ProviderFields, type ProviderForm, type SettingsData } from './Settings';
+import { field, formFrom, PROFILE_PLACEHOLDER, ProviderFields, withoutEnv, type ProviderForm, type SettingsData } from './Settings';
 
 type Pack = InferResponseType<typeof api.packs.$get>[number];
 
@@ -40,9 +40,7 @@ export function Onboarding({ onFinish }: { onFinish: () => Promise<void> }) {
 
   const saveProvider = async () => {
     await api.settings.$put({}, jsonBody({
-      provider: form.provider,
-      fastModel: form.fastModel,
-      strongModel: form.strongModel,
+      ...withoutEnv(settings, { provider: form.provider, fastModel: form.fastModel, strongModel: form.strongModel }),
       ...(form.provider === 'ollama' ? { baseUrl: form.baseUrl } : {}),
     }));
     setStep(1);

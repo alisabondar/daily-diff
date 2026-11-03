@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Config, KEY_ENV_VARS, Provider, redactKey, resolveKey } from '../../config.js';
+import { Config, envOverrides, KEY_ENV_VARS, Provider, redactKey, resolveKey } from '../../config.js';
 import { paths } from '../../paths.js';
 import { LlmError } from '../../llm/types.js';
 import { PROVIDERS, SUGGESTED_MODELS } from '../../llm/providers.js';
@@ -8,7 +8,7 @@ import { startToday } from '../../pipeline/run.js';
 import type { AppDeps } from '../deps.js';
 import { body } from '../validate.js';
 
-const PutSettings = Config.partial().omit({ onboarded: true, lastRunVersion: true }).strict();
+const PutSettings = Config.partial().omit({ onboarded: true, lastRunVersion: true, effort: true }).strict();
 const TestSettings = z.object({
   provider: Provider,
   fastModel: z.string().min(1).optional(),
@@ -23,7 +23,9 @@ export function settingsRoutes(deps: AppDeps) {
       return c.json({
         ...config,
         keySource: resolveKey(config).source,
+        keyFile: resolveKey(config).file ?? null,
         envFile: paths().env,
+        envOverrides: envOverrides(),
         providers: PROVIDERS.map((id) => ({ id, envVar: KEY_ENV_VARS[id], keySource: resolveKey({ provider: id }).source })),
         suggestedModels: SUGGESTED_MODELS,
       });

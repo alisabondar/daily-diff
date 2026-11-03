@@ -1,8 +1,8 @@
 import { mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, expect, test } from 'vitest';
-import { Config, loadConfig, redactKey, resolveKey, saveConfig } from '../src/config.js';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { Config, effectiveConfig, envOverrides, loadConfig, redactKey, resolveKey, saveConfig } from '../src/config.js';
 import { paths } from '../src/paths.js';
 
 let home: string;
@@ -10,9 +10,14 @@ beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), 'dd-'));
   process.env.DAILY_DIFF_HOME = home;
 });
+let cwd: string;
+beforeEach(() => {
+  cwd = mkdtempSync(join(tmpdir(), 'dd-cwd-'));
+  vi.spyOn(process, 'cwd').mockReturnValue(cwd);
+});
 afterEach(() => {
-  delete process.env.DAILY_DIFF_HOME;
-  delete process.env.ANTHROPIC_API_KEY;
+  vi.restoreAllMocks();
+  for (const v of ['DAILY_DIFF_HOME', 'ANTHROPIC_API_KEY', 'LLM_PROVIDER', 'LLM_MODEL', 'LLM_FAST_MODEL', 'LLM_EFFORT']) delete process.env[v];
 });
 
 const defaults = Config.parse({});
@@ -59,7 +64,7 @@ test('key comes from the env var, else from $DAILY_DIFF_HOME/.env, else none', (
   const c = { ...defaults, provider: 'anthropic' as const };
   expect(resolveKey(c)).toEqual({ source: 'none' });
   writeFileSync(join(home, '.env'), '# keys\nOPENAI_API_KEY=other\nANTHROPIC_API_KEY="file-key"\n');
-  expect(resolveKey(c)).toEqual({ key: 'file-key', source: 'file' });
+  expect(resolveKey(c)).toEqual({ key: 'file-key', source: 'file', file: join(home, '.env') });
   process.env.ANTHROPIC_API_KEY = 'env-key';
   expect(resolveKey(c)).toEqual({ key: 'env-key', source: 'env' });
 });
@@ -82,4 +87,32 @@ test('a legacy apiKey in config.json is ignored and dropped on save', () => {
   expect(resolveKey(loadConfig())).toEqual({ source: 'none' });
   saveConfig({ profile: 'x' });
   expect(readFileSync(paths().config, 'utf8')).not.toContain('old-key');
+});
+
+test('./.env in the working directory wins over $DAILY_DIFF_HOME/.env; the real env wins over both', () => {
+  const c = { ...defaults, provider: 'anthropic' as const };
+  writeFileSync(join(home, '.env'), 'ANTHROPIC_API_KEY=home-key');
+  writeFileSync(join(cwd, '.env'), 'ANTHROPIC_API_KEY=cwd-key');
+  expect(resolveKey(c)).toEqual({ key: 'cwd-key', source: 'file', file: join(cwd, '.env') });
+  process.env.ANTHROPIC_API_KEY = 'env-key';
+  expect(resolveKey(c)).toEqual({ key: 'env-key', source: 'env' });
+});
+
+test('LLM_PROVIDER / LLM_MODEL / LLM_EFFORT override the saved config', () => {
+  const saved = { ...defaults, provider: 'openai' as const, fastModel: 'a', strongModel: 'b' };
+  expect(effectiveConfig(saved)).toEqual(saved);
+  expect(envOverrides()).toEqual({ fields: [], invalid: [] });
+  writeFileSync(join(cwd, '.env'), 'LLM_PROVIDER=anthropic\nLLM_MODEL=big\nLLM_EFFORT=low\n');
+  expect(effectiveConfig(saved)).toMatchObject({ provider: 'anthropic', fastModel: 'big', strongModel: 'big', effort: 'low' });
+  expect(envOverrides().fields.sort()).toEqual(['effort', 'fastModel', 'provider', 'strongModel']);
+  process.env.LLM_FAST_MODEL = 'small';
+  expect(effectiveConfig(saved)).toMatchObject({ fastModel: 'small', strongModel: 'big' });
+});
+
+test('invalid LLM_PROVIDER / LLM_EFFORT values are ignored and reported', () => {
+  const saved = { ...defaults, provider: 'openai' as const };
+  writeFileSync(join(cwd, '.env'), 'LLM_PROVIDER=bedrock\nLLM_EFFORT=turbo\n');
+  expect(effectiveConfig(saved)).toMatchObject({ provider: 'openai' });
+  expect(effectiveConfig(saved).effort).toBeUndefined();
+  expect(envOverrides()).toEqual({ fields: [], invalid: [{ name: 'LLM_PROVIDER', value: 'bedrock' }, { name: 'LLM_EFFORT', value: 'turbo' }] });
 });

@@ -21,6 +21,8 @@ export const formFrom = (s: SettingsData, provider = s.provider): ProviderForm =
 export function ProviderFields({ settings, form, setForm, onTested, onRefresh }: { settings: SettingsData; form: ProviderForm; setForm: (f: ProviderForm) => void; onTested?: (ok: boolean) => void; onRefresh: (s: SettingsData) => void }) {
   const [test, setTest] = useState<TestResult | 'running' | null>(null);
   const p = settings.providers.find((x) => x.id === form.provider);
+  const fromEnv = (f: string) => settings.envOverrides.fields.includes(f as never);
+  const envNote = <span className="text-xs text-neutral-500"> · set in .env</span>;
   const update = (f: ProviderForm) => {
     setForm(f);
     setTest(null);
@@ -38,9 +40,14 @@ export function ProviderFields({ settings, form, setForm, onTested, onRefresh }:
 
   return (
     <div className="space-y-4">
+      {settings.envOverrides.invalid.map((v) => (
+        <p key={v.name} className="rounded border border-amber-400 bg-amber-50 px-3 py-2 text-sm dark:border-amber-700 dark:bg-amber-950">
+          Ignoring {v.name}={v.value} from .env: not a supported value.
+        </p>
+      ))}
       <label className={label}>
-        <span>Provider</span>
-        <select value={form.provider ?? ''} onChange={(e) => update(formFrom(settings, e.target.value as Provider))} className={field}>
+        <span>Provider{fromEnv('provider') && envNote}</span>
+        <select disabled={fromEnv('provider')} value={form.provider ?? ''} onChange={(e) => update(formFrom(settings, e.target.value as Provider))} className={field}>
           <option value="" disabled>Choose a provider</option>
           {settings.providers.map((x) => <option key={x.id} value={x.id}>{x.id}</option>)}
         </select>
@@ -48,12 +55,12 @@ export function ProviderFields({ settings, form, setForm, onTested, onRefresh }:
       {form.provider && (
         <>
           <label className={label}>
-            <span>Fast model</span>
-            <input value={form.fastModel} onChange={(e) => update({ ...form, fastModel: e.target.value })} className={field} />
+            <span>Fast model{fromEnv('fastModel') && envNote}</span>
+            <input disabled={fromEnv('fastModel')} value={form.fastModel} onChange={(e) => update({ ...form, fastModel: e.target.value })} className={field} />
           </label>
           <label className={label}>
-            <span>Strong model</span>
-            <input value={form.strongModel} onChange={(e) => update({ ...form, strongModel: e.target.value })} className={field} />
+            <span>Strong model{fromEnv('strongModel') && envNote}</span>
+            <input disabled={fromEnv('strongModel')} value={form.strongModel} onChange={(e) => update({ ...form, strongModel: e.target.value })} className={field} />
           </label>
           {p?.envVar && (
             <div className={label}>
@@ -61,15 +68,16 @@ export function ProviderFields({ settings, form, setForm, onTested, onRefresh }:
               {p.keySource === 'env' ? (
                 <p className="text-neutral-500">Using key from ${p.envVar}</p>
               ) : p.keySource === 'file' ? (
-                <p className="text-neutral-500">Using {p.envVar} from {settings.envFile}</p>
+                <p className="text-neutral-500">Using {p.envVar} from {p.id === settings.provider && settings.keyFile ? settings.keyFile : 'a .env file'}</p>
               ) : (
                 <div className="space-y-1 text-neutral-500">
-                  <p>Add this line to <code>{settings.envFile}</code>, then test the connection:</p>
+                  <p>Add this line to <code>.env</code> in the folder you start Daily Diff from (or <code>{settings.envFile}</code>), then test the connection:</p>
                   <pre className="rounded bg-neutral-100 px-3 py-2 dark:bg-neutral-800">{p.envVar}=your-key-here</pre>
                 </div>
               )}
             </div>
           )}
+          {settings.effort && <p className="text-sm text-neutral-500">Reasoning effort: {settings.effort} · set in .env</p>}
           {form.provider === 'ollama' && (
             <label className={label}>
               <span>Base URL</span>
@@ -87,6 +95,10 @@ export function ProviderFields({ settings, form, setForm, onTested, onRefresh }:
     </div>
   );
 }
+
+/** Drops the fields .env overrides, so saving never writes env values into config.json. */
+export const withoutEnv = <T extends object>(settings: SettingsData, values: T): Partial<T> =>
+  Object.fromEntries(Object.entries(values).filter(([k]) => !settings.envOverrides.fields.includes(k as never))) as Partial<T>;
 
 export const PROFILE_PLACEHOLDER = 'e.g. Backend engineer at a fintech startup. Interested in LLM tooling, Postgres and distributed systems. Not interested in crypto or gadget reviews.';
 
@@ -113,7 +125,7 @@ export function Settings() {
   if (!settings || !form) return null;
   const save = async () => {
     const body = {
-      ...(form.provider ? { provider: form.provider, fastModel: form.fastModel, strongModel: form.strongModel } : {}),
+      ...(form.provider ? withoutEnv(settings, { provider: form.provider, fastModel: form.fastModel, strongModel: form.strongModel }) : {}),
       ...(form.provider === 'ollama' ? { baseUrl: form.baseUrl } : {}),
       profile,
       highlightsCap: cap,

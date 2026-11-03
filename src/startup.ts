@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { serve as honoServe } from '@hono/node-server';
-import { loadConfig, saveConfig } from './config.js';
+import { effectiveConfig, loadConfig, saveConfig } from './config.js';
 import { backupIfUpgrading } from './db/backup.js';
 import { openDb } from './db/client.js';
 import { runMigrations } from './db/migrate.js';
@@ -27,10 +27,10 @@ export async function startup({ port, serve = honoServe, fetchFn }: StartupOpts)
   seedSources(db);
 
   const deps: AppDeps = {
-    db, fetchFn, now: () => new Date(), getConfig: loadConfig, saveConfig, llmFactory: createLlm, createLlm, webDir: WEB_DIR,
+    db, fetchFn, now: () => new Date(), getConfig: () => effectiveConfig(loadConfig()), saveConfig, llmFactory: createLlm, createLlm, webDir: WEB_DIR,
   };
   const server = serve({ fetch: createApp(deps).fetch, hostname: '127.0.0.1', port });
-  if (loadConfig().onboarded) void startToday(deps).done;
+  if (deps.getConfig().onboarded) void startToday(deps).done;
   return {
     close: () => {
       server.close();

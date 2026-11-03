@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, expect, test } from 'vitest';
-import { Config, loadConfig, saveConfig } from '../src/config.js';
+import { Config, effectiveConfig, loadConfig, saveConfig } from '../src/config.js';
 import { digests, feedback, sources, stories } from '../src/db/schema.js';
 import { FakeLlm } from '../src/llm/fake.js';
 import { LlmError } from '../src/llm/types.js';
@@ -49,7 +49,7 @@ function setup(llm: FakeLlm | null = new FakeLlm(handlers)) {
   writeFileSync(join(webDir, 'assets', 'app.js'), 'console.log(1)');
   const deps: AppDeps = {
     db, fetchFn, now: () => new Date(T0), retryDelaysMs: [0, 0],
-    getConfig: loadConfig, saveConfig, llmFactory: () => llm, createLlm: () => llm, webDir,
+    getConfig: () => effectiveConfig(loadConfig()), saveConfig, llmFactory: () => llm, createLlm: () => llm, webDir,
   };
   const app = createApp(deps);
   const req = async (method: string, path: string, body?: unknown) => {
@@ -217,6 +217,7 @@ test('PUT /api/settings saves a partial config; 400 on an apiKey or bad values',
   expect(withKey.status).toBe(400);
   expect(readFileSync(join(home, 'config.json'), 'utf8')).not.toContain('new-key-123');
   expect((await req('PUT', '/api/settings', { highlightsCap: 99 })).status).toBe(400);
+  expect((await req('PUT', '/api/settings', { effort: 'low' })).status).toBe(400);
 });
 
 test('POST /api/settings/test pings with an unsaved config; failures are redacted', async () => {
@@ -269,4 +270,15 @@ test('POST /api/sources/discover returns the discovery result; 400 without url',
   const res = await app.request('/api/sources/discover', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://pod.dev/rss' }) });
   expect(await res.json()).toMatchObject({ found: true, feedUrl: 'https://pod.dev/rss', suggestedType: 'podcast' });
   expect((await s.req('POST', '/api/sources/discover', {})).status).toBe(400);
+});
+
+test('GET /api/settings reports env overrides, invalid LLM_* values and the key file', async () => {
+  const { req } = setup();
+  process.env.LLM_MODEL = 'env-model';
+  process.env.LLM_PROVIDER = 'bedrock';
+  const res = await req('GET', '/api/settings');
+  expect(res.json).toMatchObject({ provider: 'anthropic', fastModel: 'env-model', strongModel: 'env-model', keyFile: join(home, '.env') });
+  expect(res.json.envOverrides).toEqual({ fields: ['fastModel', 'strongModel'], invalid: [{ name: 'LLM_PROVIDER', value: 'bedrock' }] });
+  delete process.env.LLM_MODEL;
+  delete process.env.LLM_PROVIDER;
 });

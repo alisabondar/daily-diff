@@ -47,5 +47,5 @@ export function createLlm(config: Config): Llm | null {
   const { key } = resolveKey(config);
   if (KEY_ENV_VARS[provider] && !key) return null;
   const model = modelFactory(provider, key, config.baseUrl);
-  return new AiSdkLlm({ fast: model(fastModel), strong: model(strongModel) });
+  return new AiSdkLlm({ fast: model(fastModel), strong: model(strongModel) }, undefined, config.effort);
 }
