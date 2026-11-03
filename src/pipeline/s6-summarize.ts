@@ -19,8 +19,8 @@ export function guardSummary(story: StoryWithItems, out: SummaryOutput): { summa
   return {
     summary: out.summary,
     stats,
-    pros: hasCommunity ? (out.pros ?? []).slice(0, 3) : null,
-    cons: hasCommunity ? (out.cons ?? []).slice(0, 3) : null,
+    pros: hasCommunity ? (out.pros ?? []).slice(0, 2) : null,
+    cons: hasCommunity ? (out.cons ?? []).slice(0, 2) : null,
   };
 }
 

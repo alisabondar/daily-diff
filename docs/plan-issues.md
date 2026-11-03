@@ -2,9 +2,14 @@
 
 ## Open
 
+### Change (2026-11-03): shorter Highlights and paced Reddit fetches
+- **Approved by human (2026-11-03).** The goal is a ~10-minute read. The human's first real build hit Reddit 429s on 2 of the 3 subreddit feeds.
+- **Length:** the default `highlightsCap` goes from 10 to 6 (§B.6; the 4–20 range is unchanged, so a saved config.json keeps its value) and the catch-up cap from 15 to 8 (step 11). The summarize prompt asks for "1–2 plain sentences" and "at most 2" pros/cons, and `guardSummary` cuts pros/cons to 2.
+- **Reddit (S1):** sources on `reddit.com` are fetched one at a time with a 2s gap, alongside the concurrency-8 pool for the rest. A 429 is retried once after 5s. RSS requests to Reddit send `User-Agent: daily-diff/<version>`. `IngestDeps` gains an injected `sleep`.
+- **Tests changed because the spec changed:** the step 11 and step 12 catch-up cap tests (15 → 8). New tests cover the pros/cons cap of 2, the prompt wording, the default cap of 6, and the Reddit pacing and retry.
+
 ### Change (2026-11-03): collapsed Learn and a section bar on Today
 - **Requested by human (2026-11-03):** Learn Something New starts collapsed (a native `<details>` showing the concept title) and expands on click. Both tabs get a row of section chips with story counts that scroll to each section; Highlights also has a Learn chip. They scroll with `scrollIntoView` instead of `#anchors`, because the hash is the router's. This amends step 16's layout only, with no API change.
-- **Still open:** Highlights length (target ~10 min read) and the Reddit 429s. Options are written up and await the human's choice.
 
 ### Change (2026-11-03): Bedrock through a direct `fetch` to the Converse API
 - **Approved by human (2026-11-03):** no `@ai-sdk/amazon-bedrock`. `src/llm/bedrock.ts` implements the `Llm` interface with the injected `fetchFn`, so no dependency is added. It replaces the earlier Bedrock options (a) and (c).

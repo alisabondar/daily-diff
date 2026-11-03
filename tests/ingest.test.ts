@@ -121,3 +121,50 @@ test('re-running S1 resets failedSourceIds', async () => {
   await ingest(d, fakeFetch({ 'https://flaky.dev/feed': fixture('feeds/blog-rss2.xml') }), now);
   expect(reload(d).failedSourceIds).toEqual([]);
 });
+
+const reddit = (sub: string) => `https://www.reddit.com/r/${sub}/top/.rss?t=day`;
+
+function timedFetch(routes: Record<string, number[]>) {
+  // each URL answers with its listed statuses in order (200 serves the reddit fixture); records start/end of every request
+  const log: { url: string; start: number; end: number; ua?: string }[] = [];
+  let clock = 0;
+  const fn = (async (input: string, init?: RequestInit) => {
+    const url = String(input);
+    const entry = { url, start: clock++, end: -1, ua: (init?.headers as Record<string, string> | undefined)?.['User-Agent'] };
+    log.push(entry);
+    await new Promise((r) => setTimeout(r, 5));
+    entry.end = clock++;
+    const status = routes[url]?.shift() ?? 404;
+    return status === 200 ? new Response(fixture('feeds/reddit.xml')) : new Response('', { status });
+  }) as unknown as typeof fetch;
+  return { fn, log };
+}
+
+test('reddit feeds are fetched one at a time with a gap, with a User-Agent', async () => {
+  const subs = ['a', 'b', 'c'];
+  for (const s of subs) addSource(reddit(s), { type: 'community' });
+  const { fn, log } = timedFetch(Object.fromEntries(subs.map((s) => [reddit(s), [200]])));
+  const sleeps: number[] = [];
+  const d = addDigest('2026-10-29', computeWindow(null, now));
+  await runS1(db, d, { fetchFn: fn, now: () => now, sleep: async (ms) => { sleeps.push(ms); } });
+  expect(log).toHaveLength(3);
+  for (let i = 1; i < log.length; i++) expect(log[i]!.start).toBeGreaterThan(log[i - 1]!.end);
+  expect(sleeps).toEqual([2000, 2000]);
+  expect(log.every((l) => /^daily-diff\//.test(l.ua ?? ''))).toBe(true);
+  expect(reload(d).failedSourceIds).toEqual([]);
+});
+
+test('a reddit 429 is retried once after 5s; a second 429 fails the source', async () => {
+  const retried = addSource(reddit('ok'), { type: 'community' });
+  const limited = addSource(reddit('busy'), { type: 'community' });
+  const { fn, log } = timedFetch({ [reddit('ok')]: [429, 200], [reddit('busy')]: [429, 429] });
+  const sleeps: number[] = [];
+  const d = addDigest('2026-10-29', computeWindow(null, now));
+  await runS1(db, d, { fetchFn: fn, now: () => now, sleep: async (ms) => { sleeps.push(ms); } });
+  expect(log.filter((l) => l.url === reddit('ok'))).toHaveLength(2);
+  expect(log.filter((l) => l.url === reddit('busy'))).toHaveLength(2);
+  expect(sleeps.filter((ms) => ms === 5000)).toHaveLength(2);
+  expect(reload(d).failedSourceIds).toEqual([limited.id]);
+  expect(db.select().from(sources).where(eq(sources.id, retried.id)).get()!.lastStatus).toBe('ok');
+  expect(db.select().from(sources).where(eq(sources.id, limited.id)).get()!.lastError).toMatch(/429/);
+});

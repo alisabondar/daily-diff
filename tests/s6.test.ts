@@ -3,6 +3,7 @@ import { expect, test } from 'vitest';
 import { digests, stories, storyItems } from '../src/db/schema.js';
 import { FakeLlm } from '../src/llm/fake.js';
 import { runS6 } from '../src/pipeline/s6-summarize.js';
+import { summarizeSystem } from '../src/prompts/summarize.js';
 import { ctx, seedDigest, seedItem, seedSource, testDb } from './helpers.js';
 
 function setup() {
@@ -100,4 +101,17 @@ test('prompt includes source title, url, content (capped at 6000 total) and comm
   expect(p).toContain('HN says hi');
   expect((p.match(/[ab]/g) ?? []).length).toBeLessThanOrEqual(6000 + 50);
   expect(p.match(/b/g)!.length).toBeLessThan(1100);
+});
+
+test('pros and cons are capped at 2 each', async () => {
+  const { db, story, get } = setup();
+  const { row } = story({ category: 'model', score: 9, community: 'Mixed reactions' }, [{ url: 'https://lab.dev/m', content: 'A model.' }]);
+  const fake = new FakeLlm({ summarize: () => ({ summary: 's', pros: ['a', 'b', 'c'], cons: ['x', 'y', 'z'] }) });
+  await runS6(ctx(db, fake));
+  expect(get(row.id)).toMatchObject({ pros: ['a', 'b'], cons: ['x', 'y'] });
+});
+
+test('the summarize prompt asks for 1–2 sentences and at most 2 pros/cons', () => {
+  expect(summarizeSystem(false)).toContain('1–2 plain sentences');
+  expect(summarizeSystem(true)).toContain('at most 2 each');
 });

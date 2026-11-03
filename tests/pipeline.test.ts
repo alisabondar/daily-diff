@@ -192,7 +192,7 @@ test('the next day gets a new digest whose windowStart equals the previous windo
   expect(d2).toMatchObject({ kind: 'daily', status: 'done' });
 });
 
-test('a 3-day gap gives a catchup digest with a cap of 15', async () => {
+test('a 3-day gap gives a catchup digest with a cap of 8', async () => {
   const { db, fetchFn } = setup();
   await ensureToday(deps(db, fetchFn, new FakeLlm(handlers)));
   __resetLockForTests();
@@ -205,5 +205,5 @@ test('a 3-day gap gives a catchup digest with a cap of 15', async () => {
   const fake2 = new FakeLlm(handlers);
   await ensureToday(deps(fresh.db, fresh.fetchFn, fake2));
   expect(theDigest(fresh.db)).toMatchObject({ kind: 'catchup', windowStart: T0 - 3 * DAY });
-  expect(fake2.calls.find((c) => c.task === 'compose')!.system).toContain('at most 15');
+  expect(fake2.calls.find((c) => c.task === 'compose')!.system).toContain('at most 8');
 });

@@ -18,7 +18,7 @@ export const Config = z.object({
   baseUrl: z.string().optional(), // ollama only
   effort: Effort.optional(), // env only (LLM_EFFORT)
   profile: z.string().default(''),
-  highlightsCap: z.number().int().min(4).max(20).default(10),
+  highlightsCap: z.number().int().min(4).max(20).default(6),
   relevanceThreshold: z.number().int().min(0).max(10).default(5),
   lastRunVersion: z.string().optional(),
 });

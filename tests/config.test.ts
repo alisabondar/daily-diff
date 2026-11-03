@@ -116,3 +116,7 @@ test('invalid LLM_PROVIDER / LLM_EFFORT values are ignored and reported', () => 
   expect(effectiveConfig(saved).effort).toBeUndefined();
   expect(envOverrides()).toEqual({ fields: [], invalid: [{ name: 'LLM_PROVIDER', value: 'watsonx' }, { name: 'LLM_EFFORT', value: 'turbo' }] });
 });
+
+test('Highlights default to a cap of 6', () => {
+  expect(defaults.highlightsCap).toBe(6);
+});

@@ -91,7 +91,7 @@ test('an over-cap result is truncated, a third watch item dropped, a wrong-secti
   ]);
 });
 
-test('catchup digests use a cap of 15', async () => {
+test('catchup digests use a cap of 8', async () => {
   const { db, story } = setup({ kind: 'catchup' });
   const tools = Array.from({ length: 18 }, (_, i) => story('tool', 9));
   const fake = new FakeLlm({
@@ -99,8 +99,8 @@ test('catchup digests use a cap of 15', async () => {
     quickstart: quickstart(),
   });
   await runS7(ctx(db, fake, { config: Config.parse({ highlightsCap: 4 }) }));
-  expect(entries(db, 'highlights')).toHaveLength(15);
-  expect(fake.calls[0]!.system).toContain('at most 15');
+  expect(entries(db, 'highlights')).toHaveLength(8);
+  expect(fake.calls[0]!.system).toContain('at most 8');
 });
 
 test('non-highlight summarized stories land in More sections by score', async () => {

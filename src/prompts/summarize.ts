@@ -16,11 +16,11 @@ export function summarizeSystem(isModel: boolean): string {
     ? `
 This story is an AI model release. Also:
 - stats: include only numbers that appear literally in the provided source text. Copy each value exactly as written and set sourceUrl to the url of the item it came from.
-- pros and cons: at most 3 each, drawn ONLY from the community reaction text. If no community reaction is provided, omit pros and cons.`
+- pros and cons: at most 2 each, drawn ONLY from the community reaction text. If no community reaction is provided, omit pros and cons.`
     : `
 Do not include stats, pros or cons.`;
   return `You write summaries for a daily tech briefing.
-- summary: 2–3 plain sentences covering what happened and why it matters. Do not hype. Do not repeat the headline.${modelRules}
+- summary: 1–2 plain sentences covering what happened and why it matters. Do not hype. Do not repeat the headline.${modelRules}
 Respond with JSON matching the schema.`;
 }
 

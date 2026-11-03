@@ -6,7 +6,7 @@ import { DOCS_WARNING, QUICKSTART_SYSTEM, QuickstartSchema, quickstartPrompt } f
 import { fetchWithTimeout, isSafePublicUrl, stripHtml, truncate } from '../sources/text.js';
 import { callLlm, finishStage, loadStories, newUsage, type StageCtx, type StoryWithItems } from './context.js';
 
-const CATCHUP_CAP = 15;
+const CATCHUP_CAP = 8;
 const MAX_WATCH = 2;
 const RECENT_DAYS = 30;
 const DOCS_CAP = 8000;
