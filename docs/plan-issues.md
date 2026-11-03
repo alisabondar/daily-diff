@@ -2,6 +2,12 @@
 
 ## Open
 
+### Step 23: notes on the measurements and the setup check
+- **Pricing source:** the Bedrock pricing page renders its model tables client-side, and WebFetch couldn't read the Sonnet 5.5 row. The README computes cost from Anthropic's published list price ($2/$10 per MTok, platform.claude.com/docs/en/about-claude/pricing, read 2026-11-03) plus the 10% regional-endpoint premium that page documents for Bedrock. It says so and links the Bedrock page. **Human: please confirm against the Bedrock console/pricing for us-east-1.**
+- **Builds were measured as configured:** Sonnet 5.5 for both tiers, because the human's `.env` sets only `LLM_MODEL`. A Haiku fast tier wasn't measured, and the README doesn't claim a number for it.
+- **Fresh-clone check:** `git clone` worked, and with this repo's `node_modules` linked (the registry is blocked, so `npm ci` couldn't run) `typecheck`, `test` (203) and `build` passed. `npm ci` and `npx daily-diff` from a clean machine remain for the human.
+- **Reddit:** even with sequential fetching, a retry and a User-Agent, r/MachineLearning and r/programming returned 429 on all three builds (r/LocalLLaMA succeeded). Reddit is best-effort per the plan; the failures show in the "sources failed" banner.
+
 ### Step 22: `docker build`/`docker run` not verified by the agent
 - **Problem:** the sandbox denies access to the Docker socket (`permission denied … docker.sock`), so the Dockerfile is written but not built. The `node:22-slim` tag was confirmed active on Docker Hub (2026-11-03). `npx ./daily-diff-*.tgz` also can't run, because the npm registry is blocked. Instead, the packed tarball was unpacked with this repo's dependencies and served from an empty home on `--port 4300`.
 - **Needed:** the human runs the README's `docker build` + `docker run -p 127.0.0.1:4242:4242 …` and opens http://127.0.0.1:4242.
@@ -59,7 +65,7 @@
 ### Step 21: the real-key onboarding run hasn't been done
 - **Problem:** step 21's Verify requires a manual run from an empty `DAILY_DIFF_HOME` through to a built digest with a real key. No provider key is available in this environment (no env keys, no local Ollama). Step 23 needs real builds too.
 - **Done instead:** a full run from an empty home. A fake key fails Test connection (the provider returned "invalid x-api-key"), and Next stays disabled. With only the test response stubbed in the page, profile chips, Skip/Next and the pre-checked default packs all work. Finish saves the packs, completes onboarding and lands on Today with the progress strip. The real first build ran against live feeds and ended as a raw digest (auth banner, 141 items, 2 failed sources).
-- **Needed:** the human repeats the run with a real key (or provides one) before step 21 counts as verified.
+- **Resolved (2026-11-03):** run with the human's Bedrock key from an empty `DAILY_DIFF_HOME`. Test connection passed, Next unlocked only after it, Finish started the build with the progress strip, and the first digest finished non-raw (6 Highlights, Learn, 34 More) in 110.6s.
 
 ### Step 12: order of checks in `ensureToday` — implemented as (a)
 - **Unclear:** item 0 (null `llmFactory` → raw digest, `errorCode = 'auth'`) is listed before item 1 (`!config.onboarded` → do nothing), and it doesn't say whether S1–S2 still run first.
