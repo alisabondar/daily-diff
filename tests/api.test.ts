@@ -11,7 +11,7 @@ import { __resetLockForTests, ensureToday } from '../src/pipeline/run.js';
 import { seedSources } from '../src/packs/index.js';
 import { createApp } from '../src/server/app.js';
 import type { AppDeps } from '../src/server/deps.js';
-import { startup } from '../src/startup.js';
+import { bindHost, startup } from '../src/startup.js';
 import { fakeFetch, fixture, seedSource, testDb } from './helpers.js';
 import { handlers } from './fixtures/llm/handlers.js';
 
@@ -262,6 +262,22 @@ test('startup binds the server to 127.0.0.1', async () => {
   expect(calls[0]).toMatchObject({ hostname: '127.0.0.1', port: 4300 });
   expect(loadConfig().lastRunVersion).toBeDefined();
   close();
+});
+
+test('DAILY_DIFF_HOST is honored only inside Docker', async () => {
+  process.env.DAILY_DIFF_HOST = '0.0.0.0';
+  try {
+    expect(bindHost(() => false)).toBe('127.0.0.1');
+    expect(bindHost(() => true)).toBe('0.0.0.0');
+    const calls: any[] = [];
+    const serve = ((opts: any) => { calls.push(opts); return { close: () => {} }; }) as any;
+    const { close } = await startup({ port: 4301, serve, fetchFn: fakeFetch({}), inDocker: () => false });
+    expect(calls[0].hostname).toBe('127.0.0.1');
+    close();
+  } finally {
+    delete process.env.DAILY_DIFF_HOST;
+  }
+  expect(bindHost(() => true)).toBe('127.0.0.1');
 });
 
 test('POST /api/sources/discover returns the discovery result; 400 without url', async () => {

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { serve as honoServe } from '@hono/node-server';
 import { effectiveConfig, loadConfig, saveConfig } from './config.js';
@@ -12,13 +13,18 @@ import { createApp } from './server/app.js';
 import type { AppDeps } from './server/deps.js';
 import { VERSION } from './version.js';
 
-export interface StartupOpts { port: number; serve?: typeof honoServe; fetchFn?: typeof fetch }
+export interface StartupOpts { port: number; serve?: typeof honoServe; fetchFn?: typeof fetch; inDocker?: () => boolean; onListening?: (url: string) => void }
+
+/** 127.0.0.1 always, except inside Docker (/.dockerenv), where DAILY_DIFF_HOST may widen it so port mapping works. */
+export function bindHost(inDocker: () => boolean = () => existsSync('/.dockerenv')): string {
+  return (inDocker() && process.env.DAILY_DIFF_HOST) || '127.0.0.1';
+}
 
 // src/startup.ts → <root>/dist/web; dist/startup.js → <pkg>/dist/web
 const WEB_DIR = fileURLToPath(new URL(import.meta.url.includes('/dist/') ? './web' : '../dist/web', import.meta.url));
 
 /** paths → config → backup → migrate → seed sources → serve on 127.0.0.1 → build today's digest in the background. */
-export async function startup({ port, serve = honoServe, fetchFn }: StartupOpts): Promise<{ close: () => void }> {
+export async function startup({ port, serve = honoServe, fetchFn, inDocker, onListening }: StartupOpts): Promise<{ close: () => void }> {
   const p = paths();
   backupIfUpgrading(p, VERSION, loadConfig());
   const db = openDb(p.db);
@@ -29,7 +35,8 @@ export async function startup({ port, serve = honoServe, fetchFn }: StartupOpts)
   const deps: AppDeps = {
     db, fetchFn, now: () => new Date(), getConfig: () => effectiveConfig(loadConfig()), saveConfig, llmFactory: createLlm, createLlm, webDir: WEB_DIR,
   };
-  const server = serve({ fetch: createApp(deps).fetch, hostname: '127.0.0.1', port });
+  const hostname = bindHost(inDocker);
+  const server = serve({ fetch: createApp(deps).fetch, hostname, port }, () => onListening?.(`http://${hostname}:${port}`));
   if (deps.getConfig().onboarded) void startToday(deps).done;
   return {
     close: () => {

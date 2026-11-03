@@ -51,3 +51,16 @@ AWS_REGION=us-east-1
 ```
 
 Daily Diff calls the Bedrock Converse API directly with the API key as a bearer token (no AWS SDK). Use an inference profile ID that's valid for your region (see the model's card in the Bedrock docs). The first build can be slow: Bedrock compiles each new output schema once, which can take up to ~90 seconds, and caches it for 24 hours.
+
+## Docker
+
+```bash
+docker build -t daily-diff .
+docker run -d --name daily-diff \
+  -p 127.0.0.1:4242:4242 \
+  -v daily-diff-data:/data \
+  --env-file .env \
+  daily-diff
+```
+
+Always publish the port on `127.0.0.1` as shown. Inside the container the server binds `0.0.0.0` (via `DAILY_DIFF_HOST`, which is honored only inside Docker) so port mapping works. Without `127.0.0.1:` in `-p`, Docker would expose it to your network. Data lives in the `/data` volume, and `--env-file` passes your keys without copying `.env` into the image (`.dockerignore` excludes it).

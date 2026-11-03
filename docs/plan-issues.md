@@ -2,6 +2,11 @@
 
 ## Open
 
+### Step 22: `docker build`/`docker run` not verified by the agent
+- **Problem:** the sandbox denies access to the Docker socket (`permission denied … docker.sock`), so the Dockerfile is written but not built. The `node:22-slim` tag was confirmed active on Docker Hub (2026-11-03). `npx ./daily-diff-*.tgz` also can't run, because the npm registry is blocked. Instead, the packed tarball was unpacked with this repo's dependencies and served from an empty home on `--port 4300`.
+- **Needed:** the human runs the README's `docker build` + `docker run -p 127.0.0.1:4242:4242 …` and opens http://127.0.0.1:4242.
+- **Additions:** `StartupOpts.inDocker`/`onListening` (testability; "running" prints only once the server is listening), and a friendly EADDRINUSE message. `.dockerignore` keeps `.env` out of the image.
+
 ### Change (2026-11-03): shorter Highlights and paced Reddit fetches
 - **Approved by human (2026-11-03).** The goal is a ~10-minute read. The human's first real build hit Reddit 429s on 2 of the 3 subreddit feeds.
 - **Length:** the default `highlightsCap` goes from 10 to 6 (§B.6; the 4–20 range is unchanged, so a saved config.json keeps its value) and the catch-up cap from 15 to 8 (step 11). The summarize prompt asks for "1–2 plain sentences" and "at most 2" pros/cons, and `guardSummary` cuts pros/cons to 2.
