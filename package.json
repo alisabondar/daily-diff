@@ -16,6 +16,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "start": "npm run build --silent && node dist/cli.js",
     "build": "tsc -p tsconfig.build.json && vite build",
     "postbuild": "node -e \"const fs=require('fs');fs.mkdirSync('dist/packs',{recursive:true});for(const f of fs.existsSync('src/packs')?fs.readdirSync('src/packs'):[])if(f.endsWith('.json'))fs.copyFileSync('src/packs/'+f,'dist/packs/'+f)\"",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.web.json",

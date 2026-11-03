@@ -17,6 +17,8 @@ Open http://127.0.0.1:4242, then work through onboarding: pick the provider (it'
 
 Options: `--port <n>`, `--version`, `--help`.
 
+From a clone of this repo, `npm start` builds and runs it in one step (pass options after `--`, e.g. `npm start -- --port 4300`).
+
 ## Cost and build time (measured)
 
 Three real builds on 2026-11-03, each from a fresh data directory (so each covers a 24-hour window), with the 5 default packs. Settings: Amazon Bedrock in `us-east-1`, `us.anthropic.claude-sonnet-5-5` for both tiers, `LLM_EFFORT=low`.

@@ -94,6 +94,8 @@
 
 ## Mechanical adaptations
 
+- 2026-11-03 (requested by human): `npm start` = `npm run build --silent && node dist/cli.js`, a one-command start from a clone. A Makefile was offered, but npm scripts need no extra tool and work on every OS.
+
 - Step 4, `fetchRss`: reads `content` before `contentSnippet`, then runs `stripHtml`. rss-parser's `contentSnippet` keeps `<script>` text, while stripping the raw HTML removes it. The output is the same plain text otherwise.
 - Step 4: `fetchWithTimeout()` lives in `src/sources/text.ts` and is shared by rss, hn and reddit. It turns timeouts and non-2xx responses into readable errors.
 - Step 6: `generateObject` is deprecated in `ai` v7 ("Use `generateText` with an `output` setting instead"). `ai-sdk.ts` calls `generateText({ output: Output.object({ schema }), maxRetries: 0 })`, with the same behavior. `maxRetries: 0` leaves retries to `withRetry`.

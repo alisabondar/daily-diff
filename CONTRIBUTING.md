@@ -9,7 +9,7 @@ npm ci
 npm run dev        # server on http://127.0.0.1:4242 (tsx watch) + Vite on http://localhost:5173
 ```
 
-Open http://localhost:5173. For a full digest without an API key or network, run:
+Open http://localhost:5173. To run the production build the way users do, use `npm start` (build + serve on http://127.0.0.1:4242). For a full digest without an API key or network, run:
 
 ```bash
 npm run demo       # seeds ./.demo-home from fixtures with a fake LLM, then serves it on :4242
