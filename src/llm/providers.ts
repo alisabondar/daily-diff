@@ -3,7 +3,8 @@ import { createGoogle } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
-import { KEY_ENV_VARS, resolveKey, type Config, type Provider } from '../config.js';
+import { envValue, KEY_ENV_VARS, resolveKey, type Config, type Provider } from '../config.js';
+import { BedrockLlm } from './bedrock.js';
 import { AiSdkLlm } from './ai-sdk.js';
 import type { Llm } from './types.js';
 
@@ -23,9 +24,11 @@ export const SUGGESTED_MODELS: Record<Provider, { fast: string; strong: string }
   google: { fast: 'gemini-3.5-flash-lite', strong: 'gemini-3.8-flash' },
   openrouter: { fast: 'anthropic/claude-haiku-5.5', strong: 'anthropic/claude-sonnet-5.5' },
   ollama: { fast: 'qwen3:8b', strong: 'qwen3:8b' },
+  // bedrock    https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.html (Claude Haiku/Sonnet 5.5 cards, US geo inference IDs; checked 2026-11-03)
+  bedrock: { fast: 'us.anthropic.claude-haiku-5-5', strong: 'us.anthropic.claude-sonnet-5-5' },
 };
 
-function modelFactory(provider: Provider, apiKey: string | undefined, baseUrl: string | undefined): (id: string) => LanguageModel {
+function modelFactory(provider: Exclude<Provider, 'bedrock'>, apiKey: string | undefined, baseUrl: string | undefined): (id: string) => LanguageModel {
   switch (provider) {
     case 'anthropic':
       return createAnthropic({ apiKey });
@@ -46,6 +49,10 @@ export function createLlm(config: Config): Llm | null {
   if (!provider || !fastModel || !strongModel) return null;
   const { key } = resolveKey(config);
   if (KEY_ENV_VARS[provider] && !key) return null;
+  if (provider === 'bedrock') {
+    const region = envValue('AWS_REGION')?.value;
+    return region ? new BedrockLlm({ models: { fast: fastModel, strong: strongModel }, region, token: key!, effort: config.effort }) : null;
+  }
   const model = modelFactory(provider, key, config.baseUrl);
   return new AiSdkLlm({ fast: model(fastModel), strong: model(strongModel) }, undefined, config.effort);
 }

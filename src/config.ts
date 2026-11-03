@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { paths } from './paths.js';
 
-export const Provider = z.enum(['anthropic', 'openai', 'google', 'openrouter', 'ollama']);
+export const Provider = z.enum(['anthropic', 'openai', 'google', 'openrouter', 'ollama', 'bedrock']);
 export type Provider = z.infer<typeof Provider>;
 
 export const Effort = z.enum(['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']);
@@ -31,6 +31,7 @@ export const KEY_ENV_VARS: Record<Provider, string | null> = {
   google: 'GOOGLE_GENERATIVE_AI_API_KEY',
   openrouter: 'OPENROUTER_API_KEY',
   ollama: null,
+  bedrock: 'AWS_BEARER_TOKEN_BEDROCK',
 };
 
 export function loadConfig(): Config {

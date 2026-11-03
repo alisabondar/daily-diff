@@ -19,7 +19,8 @@ Daily Diff never asks for your API key in the browser, and never stores it in `c
 | Variable | Required | Meaning |
 |---|---|---|
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY` / `OPENROUTER_API_KEY` | yes, for that provider | API key (Ollama needs none) |
-| `LLM_PROVIDER` | no | `anthropic`, `openai`, `google`, `openrouter` or `ollama`. Overrides Settings |
+| `AWS_BEARER_TOKEN_BEDROCK` + `AWS_REGION` | yes, for Bedrock | A [Bedrock API key](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys-use.html) and its region, e.g. `us-east-1` |
+| `LLM_PROVIDER` | no | `anthropic`, `openai`, `google`, `openrouter`, `ollama` or `bedrock`. Overrides Settings |
 | `LLM_MODEL` | no | Model for every stage. Overrides both model fields in Settings |
 | `LLM_FAST_MODEL` | no | A cheaper model for the light stages (grouping, scoring). Defaults to `LLM_MODEL` |
 | `LLM_EFFORT` | no | Reasoning effort: `provider-default`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max` |
@@ -39,4 +40,14 @@ chmod 600 .env
 
 Settings and onboarding show where each value came from, mark the overridden fields "set in .env", and warn about values they ignore. **Test connection** checks the key.
 
-> Amazon Bedrock (`LLM_PROVIDER=bedrock` with `AWS_BEARER_TOKEN_BEDROCK` and `AWS_REGION`) isn't supported yet. Until it is, Settings shows it as an ignored value.
+### Amazon Bedrock
+
+```bash
+LLM_PROVIDER=bedrock
+LLM_MODEL=us.anthropic.claude-sonnet-5-5
+LLM_FAST_MODEL=us.anthropic.claude-haiku-5-5
+AWS_BEARER_TOKEN_BEDROCK=your-bedrock-api-key
+AWS_REGION=us-east-1
+```
+
+Daily Diff calls the Bedrock Converse API directly with the API key as a bearer token (no AWS SDK). Use an inference profile ID that's valid for your region (see the model's card in the Bedrock docs). The first build can be slow: Bedrock compiles each new output schema once, which can take up to ~90 seconds, and caches it for 24 hours.

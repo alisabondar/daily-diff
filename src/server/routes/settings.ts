@@ -43,7 +43,7 @@ export function settingsRoutes(deps: AppDeps) {
         strongModel: t.strongModel ?? saved.strongModel ?? t.fastModel,
       };
       const llm = deps.createLlm(merged);
-      if (!llm) return c.json({ ok: false as const, code: 'auth' as const, message: 'Choose a provider and model, and add an API key.' });
+      if (!llm) return c.json({ ok: false as const, code: 'auth' as const, message: merged.provider === 'bedrock' ? 'Choose models, and set AWS_BEARER_TOKEN_BEDROCK and AWS_REGION.' : 'Choose a provider and model, and add an API key.' });
       try {
         await llm.json({ tier: 'fast', task: 'ping', system: 'Reply with {"ok": true}.', prompt: 'ping', schema: z.object({ ok: z.literal(true) }) });
         return c.json({ ok: true as const });

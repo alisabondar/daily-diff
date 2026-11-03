@@ -2,6 +2,21 @@
 
 ## Open
 
+### Change (2026-11-03): Bedrock through a direct `fetch` to the Converse API
+- **Approved by human (2026-11-03):** no `@ai-sdk/amazon-bedrock`. `src/llm/bedrock.ts` implements the `Llm` interface with the injected `fetchFn`, so no dependency is added. It replaces the earlier Bedrock options (a) and (c).
+- **Verified in the AWS docs on 2026-11-03:**
+  - Converse API reference: `POST /model/{modelId}/converse`; `system[]`, `messages[]`, `inferenceConfig.maxTokens`; response `output.message.content[].text`, `stopReason`, `usage.inputTokens/outputTokens`; errors 400/403/404/408/424/429/500/503.
+  - Bedrock API keys: `Authorization: Bearer $AWS_BEARER_TOKEN_BEDROCK`; host `bedrock-runtime.<region>.amazonaws.com`.
+  - Structured outputs: `outputConfig.textFormat = { type: 'json_schema', structure: { jsonSchema: { schema: <JSON string>, name } } }`. Every object needs `additionalProperties: false`; there are no `minimum/maximum/multipleOf/minLength/maxLength`, and `minItems` can only be 0 or 1. The first use of a schema can take ~90s to compile, so the client timeout is 120s.
+  - Model cards for Claude Sonnet 5.5 and Haiku 5.5: `us.anthropic.claude-sonnet-5-5` and `us.anthropic.claude-haiku-5-5` work from us-east-1, both support Converse and structured outputs, and effort is `low|medium|high|xhigh|max`.
+- **Design:**
+  - Provider `bedrock`. The key variable is `AWS_BEARER_TOKEN_BEDROCK`, and `AWS_REGION` is also required (same env/.env lookup).
+  - The Zod schema goes through `z.toJSONSchema`, and a sanitizer strips the unsupported keywords and sets `additionalProperties: false`. Zod still validates the response, so dropped constraints are still enforced.
+  - Effort is sent as `additionalModelRequestFields.output_config.effort`, only for `low|medium|high|xhigh|max`. **Not documented for Converse; to be confirmed with the live call.**
+  - Suggested models: fast `us.anthropic.claude-haiku-5-5`, strong `us.anthropic.claude-sonnet-5-5`.
+  - Error mapping: 401/403 → auth (not retryable); 408/424/429/5xx and unparseable output → llm (retryable); other 4xx → llm (not retryable).
+- **Rule 7:** `bedrock-runtime.<region>.amazonaws.com` joins the outbound destinations as "the configured LLM provider".
+
 ### Change (2026-11-03): `./.env`, `LLM_*` overrides and `LLM_EFFORT`
 - **Requested and approved by human (2026-11-03):** the human keeps `.env` in the repo folder (`Projects/daily-diff/.env`) with `LLM_PROVIDER`, `LLM_MODEL`, `LLM_EFFORT`, the key and the region. Answers: env overrides the app, and effort is passed to the model.
 - **Lookup order for any variable:** real environment, then `./.env` in the working directory, then `$DAILY_DIFF_HOME/.env`. Each lookup re-reads the files.

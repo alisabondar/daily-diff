@@ -111,8 +111,8 @@ test('LLM_PROVIDER / LLM_MODEL / LLM_EFFORT override the saved config', () => {
 
 test('invalid LLM_PROVIDER / LLM_EFFORT values are ignored and reported', () => {
   const saved = { ...defaults, provider: 'openai' as const };
-  writeFileSync(join(cwd, '.env'), 'LLM_PROVIDER=bedrock\nLLM_EFFORT=turbo\n');
+  writeFileSync(join(cwd, '.env'), 'LLM_PROVIDER=watsonx\nLLM_EFFORT=turbo\n');
   expect(effectiveConfig(saved)).toMatchObject({ provider: 'openai' });
   expect(effectiveConfig(saved).effort).toBeUndefined();
-  expect(envOverrides()).toEqual({ fields: [], invalid: [{ name: 'LLM_PROVIDER', value: 'bedrock' }, { name: 'LLM_EFFORT', value: 'turbo' }] });
+  expect(envOverrides()).toEqual({ fields: [], invalid: [{ name: 'LLM_PROVIDER', value: 'watsonx' }, { name: 'LLM_EFFORT', value: 'turbo' }] });
 });

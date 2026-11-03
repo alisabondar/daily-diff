@@ -275,10 +275,10 @@ test('POST /api/sources/discover returns the discovery result; 400 without url',
 test('GET /api/settings reports env overrides, invalid LLM_* values and the key file', async () => {
   const { req } = setup();
   process.env.LLM_MODEL = 'env-model';
-  process.env.LLM_PROVIDER = 'bedrock';
+  process.env.LLM_PROVIDER = 'watsonx';
   const res = await req('GET', '/api/settings');
   expect(res.json).toMatchObject({ provider: 'anthropic', fastModel: 'env-model', strongModel: 'env-model', keyFile: join(home, '.env') });
-  expect(res.json.envOverrides).toEqual({ fields: ['fastModel', 'strongModel'], invalid: [{ name: 'LLM_PROVIDER', value: 'bedrock' }] });
+  expect(res.json.envOverrides).toEqual({ fields: ['fastModel', 'strongModel'], invalid: [{ name: 'LLM_PROVIDER', value: 'watsonx' }] });
   delete process.env.LLM_MODEL;
   delete process.env.LLM_PROVIDER;
 });
