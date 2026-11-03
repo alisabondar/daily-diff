@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
@@ -41,7 +41,8 @@ function setup(llm: FakeLlm | null = new FakeLlm(handlers)) {
     'https://hn.algolia.com/api/v1/search_by_date*': fixture('hn/search.json'),
     'https://hn.algolia.com/api/v1/items/*': fixture('hn/item.json'),
   });
-  saveConfig({ onboarded: true, provider: 'anthropic', fastModel: 'f', strongModel: 's', apiKey: KEY });
+  saveConfig({ onboarded: true, provider: 'anthropic', fastModel: 'f', strongModel: 's' });
+  writeFileSync(join(home, '.env'), `ANTHROPIC_API_KEY=${KEY}\n`);
   const webDir = join(home, 'web');
   mkdirSync(join(webDir, 'assets'), { recursive: true });
   writeFileSync(join(webDir, 'index.html'), '<!doctype html><title>Daily Diff</title>');
@@ -194,8 +195,12 @@ test('GET /api/settings never includes the apiKey', async () => {
   const res = await req('GET', '/api/settings');
   expect(res.text).not.toContain(KEY);
   expect(res.json).not.toHaveProperty('apiKey');
-  expect(res.json).toMatchObject({ provider: 'anthropic', keySource: 'config', onboarded: true });
-  expect(res.json.providers).toEqual(expect.arrayContaining([{ id: 'anthropic', envVar: 'ANTHROPIC_API_KEY', envKeyPresent: false }, { id: 'ollama', envVar: null, envKeyPresent: false }]));
+  expect(res.json).toMatchObject({ provider: 'anthropic', keySource: 'file', envFile: join(home, '.env'), onboarded: true });
+  expect(res.json.providers).toEqual(expect.arrayContaining([
+    { id: 'anthropic', envVar: 'ANTHROPIC_API_KEY', keySource: 'file' },
+    { id: 'openai', envVar: 'OPENAI_API_KEY', keySource: 'none' },
+    { id: 'ollama', envVar: null, keySource: 'none' },
+  ]));
   expect(res.json.suggestedModels.anthropic).toHaveProperty('fast');
   process.env.ANTHROPIC_API_KEY = 'env-key-xyz';
   const env = await req('GET', '/api/settings');
@@ -203,24 +208,24 @@ test('GET /api/settings never includes the apiKey', async () => {
   expect(env.text).not.toContain('env-key-xyz');
 });
 
-test('PUT /api/settings saves a partial config; apiKey is write-only and "" clears it; 400 on bad values', async () => {
+test('PUT /api/settings saves a partial config; 400 on an apiKey or bad values', async () => {
   const { req } = setup();
-  const res = await req('PUT', '/api/settings', { profile: 'Rust dev', highlightsCap: 12, apiKey: 'new-key-123' });
+  const res = await req('PUT', '/api/settings', { profile: 'Rust dev', highlightsCap: 12 });
   expect(res.status).toBe(200);
-  expect(res.text).not.toContain('new-key-123');
-  expect(loadConfig()).toMatchObject({ profile: 'Rust dev', highlightsCap: 12, apiKey: 'new-key-123' });
-  await req('PUT', '/api/settings', { apiKey: '' });
-  expect(loadConfig().apiKey).toBeUndefined();
+  expect(loadConfig()).toMatchObject({ profile: 'Rust dev', highlightsCap: 12 });
+  const withKey = await req('PUT', '/api/settings', { apiKey: 'new-key-123' });
+  expect(withKey.status).toBe(400);
+  expect(readFileSync(join(home, 'config.json'), 'utf8')).not.toContain('new-key-123');
   expect((await req('PUT', '/api/settings', { highlightsCap: 99 })).status).toBe(400);
 });
 
 test('POST /api/settings/test pings with an unsaved config; failures are redacted', async () => {
   const ok = setup();
   expect((await ok.req('POST', '/api/settings/test', { provider: 'anthropic', fastModel: 'f' })).json).toEqual({ ok: true });
-  const bad = setup(new FakeLlm({ ping: () => new LlmError('401 invalid key try-this-key-999', 'auth', false) }));
-  const res = await bad.req('POST', '/api/settings/test', { provider: 'anthropic', fastModel: 'f', apiKey: 'try-this-key-999' });
+  const bad = setup(new FakeLlm({ ping: () => new LlmError(`401 invalid key ${KEY}`, 'auth', false) }));
+  const res = await bad.req('POST', '/api/settings/test', { provider: 'anthropic', fastModel: 'f' });
   expect(res.json).toEqual({ ok: false, code: 'auth', message: '401 invalid key [redacted]' });
-  expect(loadConfig().apiKey).toBe(KEY); // not saved
+  expect((await bad.req('POST', '/api/settings/test', { provider: 'anthropic', fastModel: 'f', apiKey: 'x' })).status).toBe(400);
   expect((await bad.req('POST', '/api/settings/test', { provider: 'nope' })).status).toBe(400);
 });
 

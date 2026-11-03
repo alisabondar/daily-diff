@@ -1,8 +1,8 @@
-import { mkdtempSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, expect, test } from 'vitest';
-import { Config, loadConfig, resolveKey, saveConfig } from '../src/config.js';
+import { Config, loadConfig, redactKey, resolveKey, saveConfig } from '../src/config.js';
 import { paths } from '../src/paths.js';
 
 let home: string;
@@ -21,6 +21,7 @@ test('paths live under DAILY_DIFF_HOME and dirs exist', () => {
   const p = paths();
   expect(p.home).toBe(home);
   expect(p.config).toBe(join(home, 'config.json'));
+  expect(p.env).toBe(join(home, '.env'));
   expect(p.db.startsWith(home)).toBe(true);
   expect(statSync(p.backups).isDirectory()).toBe(true);
 });
@@ -54,11 +55,31 @@ test('schema-invalid file is also renamed', () => {
   expect(readdirSync(home).some((f) => f.startsWith('config.json.bad-'))).toBe(true);
 });
 
-test('env key wins over config key', () => {
+test('key comes from the env var, else from $DAILY_DIFF_HOME/.env, else none', () => {
+  const c = { ...defaults, provider: 'anthropic' as const };
+  expect(resolveKey(c)).toEqual({ source: 'none' });
+  writeFileSync(join(home, '.env'), '# keys\nOPENAI_API_KEY=other\nANTHROPIC_API_KEY="file-key"\n');
+  expect(resolveKey(c)).toEqual({ key: 'file-key', source: 'file' });
   process.env.ANTHROPIC_API_KEY = 'env-key';
-  const c = { ...defaults, provider: 'anthropic' as const, apiKey: 'cfg-key' };
   expect(resolveKey(c)).toEqual({ key: 'env-key', source: 'env' });
-  delete process.env.ANTHROPIC_API_KEY;
-  expect(resolveKey(c)).toEqual({ key: 'cfg-key', source: 'config' });
-  expect(resolveKey({ ...c, apiKey: undefined })).toEqual({ source: 'none' });
+});
+
+test('.env edits apply without a restart', () => {
+  const c = { ...defaults, provider: 'anthropic' as const };
+  writeFileSync(join(home, '.env'), 'ANTHROPIC_API_KEY=first');
+  expect(resolveKey(c).key).toBe('first');
+  writeFileSync(join(home, '.env'), 'ANTHROPIC_API_KEY=second');
+  expect(resolveKey(c).key).toBe('second');
+});
+
+test('a key from .env is redacted too', () => {
+  writeFileSync(join(home, '.env'), 'ANTHROPIC_API_KEY=sk-file-777');
+  expect(redactKey('bad key sk-file-777', { ...defaults, provider: 'anthropic' })).toBe('bad key [redacted]');
+});
+
+test('a legacy apiKey in config.json is ignored and dropped on save', () => {
+  writeFileSync(paths().config, JSON.stringify({ provider: 'anthropic', apiKey: 'old-key' }));
+  expect(resolveKey(loadConfig())).toEqual({ source: 'none' });
+  saveConfig({ profile: 'x' });
+  expect(readFileSync(paths().config, 'utf8')).not.toContain('old-key');
 });

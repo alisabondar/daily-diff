@@ -3,3 +3,5 @@ dist/
 .demo-home/
 *.tgz
 .DS_Store
+.env
+.fresh-home/

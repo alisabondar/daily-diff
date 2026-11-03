@@ -1,14 +1,22 @@
-import { afterEach, expect, test } from 'vitest';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, expect, test } from 'vitest';
 import { z } from 'zod';
 import { Config } from '../src/config.js';
+import { paths } from '../src/paths.js';
 import { AiSdkLlm, type ModelCall } from '../src/llm/ai-sdk.js';
 import { FakeLlm } from '../src/llm/fake.js';
 import { createLlm } from '../src/llm/providers.js';
 import { withRetry } from '../src/llm/retry.js';
 import { LlmError } from '../src/llm/types.js';
 
+beforeEach(() => {
+  process.env.DAILY_DIFF_HOME = mkdtempSync(join(tmpdir(), 'dd-'));
+});
 afterEach(() => {
   delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.DAILY_DIFF_HOME;
 });
 
 const schema = z.object({ ok: z.literal(true) });
@@ -59,14 +67,14 @@ const defaults = Config.parse({});
 test('createLlm returns null without provider, models or key', () => {
   expect(createLlm(defaults)).toBeNull();
   expect(createLlm({ ...defaults, provider: 'anthropic', fastModel: 'f', strongModel: 's' })).toBeNull();
-  expect(createLlm({ ...defaults, provider: 'anthropic', fastModel: 'f', apiKey: 'k' })).toBeNull();
 });
 
-test('createLlm builds with an env key, a config key, or no key for ollama', () => {
+test('createLlm builds with an env key, a .env key, or no key for ollama', () => {
   const base = { ...defaults, fastModel: 'f', strongModel: 's' };
   process.env.ANTHROPIC_API_KEY = 'env-key';
   expect(createLlm({ ...base, provider: 'anthropic' })).not.toBeNull();
-  expect(createLlm({ ...base, provider: 'openai', apiKey: 'k' })).not.toBeNull();
+  writeFileSync(join(paths().home, '.env'), 'OPENAI_API_KEY=k');
+  expect(createLlm({ ...base, provider: 'openai' })).not.toBeNull();
   expect(createLlm({ ...base, provider: 'ollama' })).not.toBeNull();
 });
 

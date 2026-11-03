@@ -28,7 +28,7 @@ export function Onboarding({ onFinish }: { onFinish: () => Promise<void> }) {
     (async () => {
       const s = await (await api.settings.$get()).json();
       setSettings(s);
-      setForm(formFrom(s, s.provider ?? s.providers.find((p) => p.envKeyPresent)?.id));
+      setForm(formFrom(s, s.provider ?? s.providers.find((p) => p.keySource !== 'none')?.id));
       setProfile(s.profile);
       const p = await (await api.packs.$get()).json();
       setPacks(p);
@@ -43,7 +43,6 @@ export function Onboarding({ onFinish }: { onFinish: () => Promise<void> }) {
       provider: form.provider,
       fastModel: form.fastModel,
       strongModel: form.strongModel,
-      ...(form.apiKey ? { apiKey: form.apiKey } : {}),
       ...(form.provider === 'ollama' ? { baseUrl: form.baseUrl } : {}),
     }));
     setStep(1);
@@ -70,7 +69,7 @@ export function Onboarding({ onFinish }: { onFinish: () => Promise<void> }) {
 
       {step === 0 && (
         <section className="space-y-6">
-          <ProviderFields settings={settings} form={form} setForm={setForm} onTested={setTested} />
+          <ProviderFields settings={settings} form={form} setForm={setForm} onTested={setTested} onRefresh={setSettings} />
           <button onClick={saveProvider} disabled={!tested} className={primary}>Next</button>
         </section>
       )}

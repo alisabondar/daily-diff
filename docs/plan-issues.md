@@ -2,6 +2,24 @@
 
 ## Open
 
+### Change (2026-11-03): API keys only from the environment or `$DAILY_DIFF_HOME/.env`
+- **Requested and approved by human (2026-11-03):** remove in-app key entry. Keys come from real env vars, or from a `.env` file in the data directory (`~/.daily-diff/.env` by default). Real env vars win over the file.
+- **Changes the plan:** §B.6 drops `apiKey` from config.json; step 13's `PUT /api/settings` no longer accepts `apiKey` (it now returns 400) and `POST /api/settings/test` no longer takes one; `keySource` becomes `env | file | none`; and `providers[]` reports each provider's `keySource` instead of `envKeyPresent`. Steps 20/21 show "Using key from $VAR" (env), "Using $VAR from <path>" (file), or the line to add to the file, with no key input. `GET /api/settings` also returns `envFile` (the path).
+- **How:** `resolveKey` re-reads the file on each lookup with Node's built-in `util.parseEnv`, so no dependency is added, and adding a key takes effect without a restart. `engines.node` goes to `>=20.12` (`util.parseEnv` was added in v20.12.0/v21.7.0). A legacy `apiKey` left in config.json is ignored and dropped on the next save.
+- **Tests changed because the spec changed:** the config, api, llm and pipeline tests that set `apiKey` in config now supply the key through env or `.env`. `pipeline.test.ts` now uses a temp `DAILY_DIFF_HOME`, so key resolution never reads the real `~/.daily-diff/.env`.
+
+### Request (2026-11-03): add Amazon Bedrock as a provider
+- **Conflict:** the plan has five providers (§B.6 `provider` enum) and its dependency allowlist (§B.2) doesn't include `@ai-sdk/amazon-bedrock`. Bedrock also doesn't use the single `apiKey` model: it authenticates with AWS credentials (access key ID + secret + optional session token, or the default AWS credential chain/profile) plus a region. Rule 7's list of outbound destinations would gain `bedrock-runtime.<region>.amazonaws.com`.
+- **Options:** (a) add `@ai-sdk/amazon-bedrock` and use the AWS credential chain from the environment only (`AWS_REGION`, `AWS_PROFILE`/access keys). The UI shows "Using AWS credentials from environment", and no secrets are stored in config.json. (b) also store an access key ID/secret in config.json, which adds two secrets to the redaction and write-only rules. (c) reach Bedrock through OpenRouter or another OpenAI-compatible gateway, with no new dependency.
+- **Recommendation:** (a). It's the smallest change, keeps every secret out of config.json, and matches how AWS users already authenticate. Model IDs come from the live Bedrock docs.
+- **Approved by human (2026-11-03):** (a), credentials from the environment only.
+
+### Request (2026-11-03): an animated loading screen while the digest builds
+- **Conflict:** step 16 specifies the ProgressStrip (show `progress.message` above the latest done digest), and Phase 5 says "functional UI only… Don't add a UI kit or animation library. Visual polish is a separate later task outside this plan."
+- **Options:** (a) after the plan, as part of the later polish task: a full-screen build view using CSS/Tailwind keyframes only (no library), showing the 8 stages with the current one animated and the live message, used when there's no earlier digest to show. (b) the same now, as an amendment to step 16. (c) leave the ProgressStrip as it is.
+- **Recommendation:** (a) or (b). Either way it's CSS-only, so no new dependency, and the strip stays for the case where an earlier digest is visible.
+- **Decided by human (2026-11-03):** (a), deferred until after step 24.
+
 ### Step 21: the real-key onboarding run hasn't been done
 - **Problem:** step 21's Verify requires a manual run from an empty `DAILY_DIFF_HOME` through to a built digest with a real key. No provider key is available in this environment (no env keys, no local Ollama). Step 23 needs real builds too.
 - **Done instead:** a full run from an empty home. A fake key fails Test connection (the provider returned "invalid x-api-key"), and Next stays disabled. With only the test response stubbed in the page, profile chips, Skip/Next and the pre-checked default packs all work. Finish saves the packs, completes onboarding and lands on Today with the progress strip. The real first build ran against live feeds and ended as a raw digest (auth banner, 141 items, 2 failed sources).

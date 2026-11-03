@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { Config, KEY_ENV_VARS, Provider, redactKey, resolveKey } from '../../config.js';
+import { paths } from '../../paths.js';
 import { LlmError } from '../../llm/types.js';
 import { PROVIDERS, SUGGESTED_MODELS } from '../../llm/providers.js';
 import { startToday } from '../../pipeline/run.js';
@@ -12,30 +13,23 @@ const TestSettings = z.object({
   provider: Provider,
   fastModel: z.string().min(1).optional(),
   strongModel: z.string().min(1).optional(),
-  apiKey: z.string().optional(),
   baseUrl: z.string().optional(),
-});
+}).strict();
 
 export function settingsRoutes(deps: AppDeps) {
   return new Hono()
     .get('/settings', (c) => {
-      const { apiKey: _, ...config } = deps.getConfig();
+      const config = deps.getConfig();
       return c.json({
         ...config,
-        keySource: resolveKey(deps.getConfig()).source,
-        providers: PROVIDERS.map((id) => {
-          const envVar = KEY_ENV_VARS[id];
-          return { id, envVar, envKeyPresent: !!(envVar && process.env[envVar]) };
-        }),
+        keySource: resolveKey(config).source,
+        envFile: paths().env,
+        providers: PROVIDERS.map((id) => ({ id, envVar: KEY_ENV_VARS[id], keySource: resolveKey({ provider: id }).source })),
         suggestedModels: SUGGESTED_MODELS,
       });
     })
     .put('/settings', async (c) => {
-      const patch = await body(c, PutSettings);
-      const { apiKey, ...rest } = patch;
-      const next: Partial<Config> = { ...rest };
-      if (apiKey !== undefined) next.apiKey = apiKey === '' ? undefined : apiKey;
-      deps.saveConfig(next);
+      deps.saveConfig(await body(c, PutSettings));
       return c.json({ ok: true });
     })
     .post('/settings/test', async (c) => {
@@ -44,7 +38,6 @@ export function settingsRoutes(deps: AppDeps) {
       const merged: Config = {
         ...saved,
         ...t,
-        apiKey: t.apiKey || saved.apiKey,
         strongModel: t.strongModel ?? saved.strongModel ?? t.fastModel,
       };
       const llm = deps.createLlm(merged);

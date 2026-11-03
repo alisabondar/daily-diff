@@ -1,5 +1,8 @@
 import { eq } from 'drizzle-orm';
-import { beforeEach, expect, test } from 'vitest';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, expect, test } from 'vitest';
 import { Config } from '../src/config.js';
 import { digestEntries, digests, learnItems, stories } from '../src/db/schema.js';
 import { FakeLlm, type FakeHandlers } from '../src/llm/fake.js';
@@ -14,7 +17,15 @@ const DAY = 24 * 3600_000;
 const T0 = Date.parse('2026-10-28T20:00:00Z');
 
 process.env.TZ = 'UTC';
-beforeEach(() => __resetLockForTests());
+beforeEach(() => {
+  __resetLockForTests();
+  process.env.DAILY_DIFF_HOME = mkdtempSync(join(tmpdir(), 'dd-'));
+  process.env.ANTHROPIC_API_KEY = 'sk-test-secret';
+});
+afterEach(() => {
+  delete process.env.DAILY_DIFF_HOME;
+  delete process.env.ANTHROPIC_API_KEY;
+});
 
 function setup() {
   const db = testDb();
@@ -35,7 +46,7 @@ function setup() {
 function deps(db: Db, fetchFn: typeof fetch, llm: FakeLlm | null, at = T0, config: Partial<Config> = {}): EnsureDeps {
   return {
     db, fetchFn, now: () => new Date(at), retryDelaysMs: [0, 0],
-    getConfig: () => Config.parse({ onboarded: true, apiKey: 'sk-test-secret', provider: 'anthropic', ...config }),
+    getConfig: () => Config.parse({ onboarded: true, provider: 'anthropic', ...config }),
     llmFactory: () => llm,
   };
 }

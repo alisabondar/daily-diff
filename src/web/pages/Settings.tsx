@@ -4,7 +4,7 @@ import { api, jsonBody } from '../api';
 
 export type SettingsData = InferResponseType<typeof api.settings.$get>;
 type Provider = SettingsData['providers'][number]['id'];
-export interface ProviderForm { provider?: Provider; fastModel: string; strongModel: string; apiKey: string; baseUrl: string }
+export interface ProviderForm { provider?: Provider; fastModel: string; strongModel: string; baseUrl: string }
 type TestResult = InferResponseType<typeof api.settings.test.$post>;
 
 export const field = 'w-full rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700';
@@ -14,12 +14,11 @@ export const formFrom = (s: SettingsData, provider = s.provider): ProviderForm =
   provider,
   fastModel: (provider === s.provider ? s.fastModel : undefined) ?? (provider ? s.suggestedModels[provider].fast : ''),
   strongModel: (provider === s.provider ? s.strongModel : undefined) ?? (provider ? s.suggestedModels[provider].strong : ''),
-  apiKey: '',
   baseUrl: s.baseUrl ?? '',
 });
 
 /** Provider, models, key, base URL and Test connection. Shared with onboarding. */
-export function ProviderFields({ settings, form, setForm, onTested }: { settings: SettingsData; form: ProviderForm; setForm: (f: ProviderForm) => void; onTested?: (ok: boolean) => void }) {
+export function ProviderFields({ settings, form, setForm, onTested, onRefresh }: { settings: SettingsData; form: ProviderForm; setForm: (f: ProviderForm) => void; onTested?: (ok: boolean) => void; onRefresh: (s: SettingsData) => void }) {
   const [test, setTest] = useState<TestResult | 'running' | null>(null);
   const p = settings.providers.find((x) => x.id === form.provider);
   const update = (f: ProviderForm) => {
@@ -30,10 +29,11 @@ export function ProviderFields({ settings, form, setForm, onTested }: { settings
   const runTest = async () => {
     if (!form.provider) return;
     setTest('running');
-    const body = { provider: form.provider, fastModel: form.fastModel || undefined, strongModel: form.strongModel || undefined, apiKey: form.apiKey || undefined, baseUrl: form.baseUrl || undefined };
+    const body = { provider: form.provider, fastModel: form.fastModel || undefined, strongModel: form.strongModel || undefined, baseUrl: form.baseUrl || undefined };
     const r = await (await api.settings.test.$post({}, jsonBody(body))).json();
     setTest(r);
     onTested?.(r.ok);
+    onRefresh(await (await api.settings.$get()).json()); // picks up a key just added to .env
   };
 
   return (
@@ -56,21 +56,19 @@ export function ProviderFields({ settings, form, setForm, onTested }: { settings
             <input value={form.strongModel} onChange={(e) => update({ ...form, strongModel: e.target.value })} className={field} />
           </label>
           {p?.envVar && (
-            <label className={label}>
+            <div className={label}>
               <span>API key</span>
-              {p.envKeyPresent ? (
+              {p.keySource === 'env' ? (
                 <p className="text-neutral-500">Using key from ${p.envVar}</p>
+              ) : p.keySource === 'file' ? (
+                <p className="text-neutral-500">Using {p.envVar} from {settings.envFile}</p>
               ) : (
-                <input
-                  type="password"
-                  autoComplete="off"
-                  value={form.apiKey}
-                  onChange={(e) => update({ ...form, apiKey: e.target.value })}
-                  placeholder={settings.keySource === 'config' ? '••• saved' : 'not set'}
-                  className={field}
-                />
+                <div className="space-y-1 text-neutral-500">
+                  <p>Add this line to <code>{settings.envFile}</code>, then test the connection:</p>
+                  <pre className="rounded bg-neutral-100 px-3 py-2 dark:bg-neutral-800">{p.envVar}=your-key-here</pre>
+                </div>
               )}
-            </label>
+            </div>
           )}
           {form.provider === 'ollama' && (
             <label className={label}>
@@ -116,7 +114,6 @@ export function Settings() {
   const save = async () => {
     const body = {
       ...(form.provider ? { provider: form.provider, fastModel: form.fastModel, strongModel: form.strongModel } : {}),
-      ...(form.apiKey ? { apiKey: form.apiKey } : {}),
       ...(form.provider === 'ollama' ? { baseUrl: form.baseUrl } : {}),
       profile,
       highlightsCap: cap,
@@ -126,17 +123,12 @@ export function Settings() {
     setSaved(res.ok ? 'Saved' : ((await res.json()) as { error?: string }).error ?? 'Could not save.');
     if (res.ok) load();
   };
-  const clearKey = async () => {
-    await api.settings.$put({}, jsonBody({ apiKey: '' }));
-    load();
-  };
 
   return (
     <div className="max-w-xl space-y-8">
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Model provider</h2>
-        <ProviderFields settings={settings} form={form} setForm={setForm} />
-        {settings.keySource === 'config' && <button onClick={clearKey} className="text-sm text-neutral-500 underline">Remove saved key</button>}
+        <ProviderFields settings={settings} form={form} setForm={setForm} onRefresh={setSettings} />
       </section>
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Your profile</h2>

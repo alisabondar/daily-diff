@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, renameSync, writeFileSync, chmodSync } from 'node:fs';
+import { parseEnv } from 'node:util';
 import { z } from 'zod';
 import { paths } from './paths.js';
 
@@ -10,7 +11,6 @@ export const Config = z.object({
   provider: Provider.optional(),
   fastModel: z.string().optional(),
   strongModel: z.string().optional(),
-  apiKey: z.string().optional(), // only if not from env
   baseUrl: z.string().optional(), // ollama only
   profile: z.string().default(''),
   highlightsCap: z.number().int().min(4).max(20).default(10),
@@ -47,12 +47,16 @@ export function saveConfig(partial: Partial<Config>): Config {
   return config;
 }
 
-export function resolveKey(config: Config): { key?: string; source: 'env' | 'config' | 'none' } {
+export type KeySource = 'env' | 'file' | 'none';
+
+/** The provider's key: its env var, else the same name in $DAILY_DIFF_HOME/.env (re-read each call). */
+export function resolveKey(config: Pick<Config, 'provider'>): { key?: string; source: KeySource } {
   const envVar = config.provider ? KEY_ENV_VARS[config.provider] : null;
-  const envKey = envVar ? process.env[envVar] : undefined;
-  if (envKey) return { key: envKey, source: 'env' };
-  if (config.apiKey) return { key: config.apiKey, source: 'config' };
-  return { source: 'none' };
+  if (!envVar) return { source: 'none' };
+  if (process.env[envVar]) return { key: process.env[envVar], source: 'env' };
+  const file = paths().env;
+  const fileKey = existsSync(file) ? parseEnv(readFileSync(file, 'utf8'))[envVar] : undefined;
+  return fileKey ? { key: fileKey, source: 'file' } : { source: 'none' };
 }
 
 /** Rule 7: replaces every occurrence of the active API key with [redacted]. */
