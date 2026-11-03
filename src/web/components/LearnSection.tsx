@@ -35,8 +35,10 @@ const Ref = ({ value }: { value: string }) => (
 
 export function LearnSection({ learn }: { learn: Learn }) {
   return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-semibold">📚 Learn Something New</h2>
+    <details id="sec-learn" className="group space-y-4">
+      <summary className="mt-6 cursor-pointer list-none text-xl font-semibold">
+        📚 Learn Something New <span className="text-sm font-normal text-neutral-500">· {learn.concept.title} <span className="group-open:hidden">(show)</span></span>
+      </summary>
       <div className="space-y-4 rounded border border-neutral-200 p-5 dark:border-neutral-800">
         <h3 className="text-lg font-semibold">{learn.concept.title}</h3>
         <Markdown src={learn.concept.bodyMd} />
@@ -48,6 +50,6 @@ export function LearnSection({ learn }: { learn: Learn }) {
         <Markdown src={learn.quickstart.bodyMd} />
         <Ref value={learn.quickstart.sourceRef} />
       </div>
-    </section>
+    </details>
   );
 }

@@ -5,6 +5,9 @@ import { LearnSection } from '../components/LearnSection';
 import { ProgressStrip } from '../components/ProgressStrip';
 import { StoryCard } from '../components/StoryCard';
 
+// Scroll instead of #anchors: the hash is the router's.
+const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
 const LABELS: Record<string, string> = {
   models: '🧠 Model Releases',
   tools: '🛠 Tools',
@@ -55,8 +58,20 @@ export function Today({ status, date }: { status: Status; date?: string }) {
             </div>
           </div>
           {empty && !digest.meta.isRaw && <p className="py-6 text-neutral-500">Quiet day — nothing above your relevance threshold.</p>}
+          {(groups.length > 0 || (tab === 'highlights' && digest.learn)) && (
+            <nav aria-label="Sections" className="mb-2 flex flex-wrap gap-2 text-sm">
+              {groups.map((g) => (
+                <button key={g.section} onClick={() => jump(`sec-${g.section}`)} className="rounded-full bg-neutral-100 px-3 py-1 dark:bg-neutral-800">
+                  {LABELS[g.section] ?? g.section} <span className="text-neutral-500">{g.stories.length}</span>
+                </button>
+              ))}
+              {tab === 'highlights' && digest.learn && (
+                <button onClick={() => jump('sec-learn')} className="rounded-full bg-neutral-100 px-3 py-1 dark:bg-neutral-800">📚 Learn</button>
+              )}
+            </nav>
+          )}
           {groups.map((g) => (
-            <section key={g.section} className="mb-8">
+            <section key={g.section} id={`sec-${g.section}`} className="mb-8 scroll-mt-4">
               <h2 className="mt-6 text-xl font-semibold">{LABELS[g.section] ?? g.section}</h2>
               {g.stories.map((s) => <StoryCard key={s.id} story={s} />)}
             </section>

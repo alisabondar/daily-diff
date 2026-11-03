@@ -2,6 +2,10 @@
 
 ## Open
 
+### Change (2026-11-03): collapsed Learn and a section bar on Today
+- **Requested by human (2026-11-03):** Learn Something New starts collapsed (a native `<details>` showing the concept title) and expands on click. Both tabs get a row of section chips with story counts that scroll to each section; Highlights also has a Learn chip. They scroll with `scrollIntoView` instead of `#anchors`, because the hash is the router's. This amends step 16's layout only, with no API change.
+- **Still open:** Highlights length (target ~10 min read) and the Reddit 429s. Options are written up and await the human's choice.
+
 ### Change (2026-11-03): Bedrock through a direct `fetch` to the Converse API
 - **Approved by human (2026-11-03):** no `@ai-sdk/amazon-bedrock`. `src/llm/bedrock.ts` implements the `Llm` interface with the injected `fetchFn`, so no dependency is added. It replaces the earlier Bedrock options (a) and (c).
 - **Verified in the AWS docs on 2026-11-03:**
