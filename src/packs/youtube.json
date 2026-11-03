@@ -3,5 +3,62 @@
   "name": "YouTube",
   "emoji": "🎬",
   "defaultEnabled": false,
-  "sources": []
+  "sources": [
+    {
+      "title": "Anthropic",
+      "url": "https://www.youtube.com/@anthropic-ai",
+      "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCrDwWp7EBBv4NwvScIpBDOA",
+      "kind": "rss",
+      "type": "video",
+      "defaultEnabled": true
+    },
+    {
+      "title": "OpenAI",
+      "url": "https://www.youtube.com/@OpenAI",
+      "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCXZCJLdBC09xxGZ6gcdrc6A",
+      "kind": "rss",
+      "type": "video",
+      "defaultEnabled": true
+    },
+    {
+      "title": "Google DeepMind",
+      "url": "https://www.youtube.com/@googledeepmind",
+      "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCP7jMXSY2xbc3KCAE0MHQ-A",
+      "kind": "rss",
+      "type": "video",
+      "defaultEnabled": true
+    },
+    {
+      "title": "Fireship",
+      "url": "https://www.youtube.com/@Fireship",
+      "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA",
+      "kind": "rss",
+      "type": "video",
+      "defaultEnabled": true
+    },
+    {
+      "title": "AI Explained",
+      "url": "https://www.youtube.com/@aiexplained-official",
+      "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCNJ1Ymd5yFuUPtn21xtRbbw",
+      "kind": "rss",
+      "type": "video",
+      "defaultEnabled": true
+    },
+    {
+      "title": "Two Minute Papers",
+      "url": "https://www.youtube.com/@TwoMinutePapers",
+      "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCbfYPyITQ-7l4upoX8nvctg",
+      "kind": "rss",
+      "type": "video",
+      "defaultEnabled": true
+    },
+    {
+      "title": "ThePrimeagen",
+      "url": "https://www.youtube.com/@ThePrimeagen",
+      "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UC8ENHE5xdFSwx71u3fDH5Xw",
+      "kind": "rss",
+      "type": "video",
+      "defaultEnabled": true
+    }
+  ]
 }

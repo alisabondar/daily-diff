@@ -2,6 +2,10 @@
 
 ## Open
 
+### Step 24 audit fix (2026-11-03): YouTube discovery used the wrong channel, and the pack was empty
+- **Problem:** step 14 scans a `@handle` page for `"channelId"`, but on live pages that key appears only for *related* channels. @Fireship resolved to "Beyond Fireship" and @ThePrimeagen to "The PrimeTime", and five other channels resolved to nothing. The page's own id is `"externalId"`, which matches the canonical `/channel/UC…` link. Because of this, step 3 shipped the YouTube pack empty.
+- **Fix:** discovery prefers `"externalId"`, then the canonical link, then `"channelId"` as before. There's a new test with a fixture that contains related channels. The YouTube pack now has the 7 channels from Part D, verified live (see `src/packs/VERIFY.md`), with `defaultEnabled: true` per source so enabling the pack switches them on.
+
 ### Step 23: notes on the measurements and the setup check
 - **Pricing source:** the Bedrock pricing page renders its model tables client-side, and WebFetch couldn't read the Sonnet 5.5 row. The README computes cost from Anthropic's published list price ($2/$10 per MTok, platform.claude.com/docs/en/about-claude/pricing, read 2026-11-03) plus the 10% regional-endpoint premium that page documents for Bedrock. It says so and links the Bedrock page. **Human: please confirm against the Bedrock console/pricing for us-east-1.**
 - **Builds were measured as configured:** Sonnet 5.5 for both tiers, because the human's `.env` sets only `LLM_MODEL`. A Haiku fast tier wasn't measured, and the README doesn't claim a number for it.

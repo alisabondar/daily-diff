@@ -88,7 +88,8 @@ export async function discoverFeed(input: string, { fetchFn }: { fetchFn?: typeo
   if (await tryParse(text)) return (await confirm(url.toString(), fetchFn)) ?? { found: false, reason: NOT_FOUND };
 
   if (/(^|\.)youtube\.com$/.test(url.hostname) && url.pathname.startsWith('/@')) {
-    const id = /"channelId":"([\w-]+)"/.exec(text)?.[1];
+    // The page's own id is "externalId" (and the canonical link); "channelId" also appears for related channels.
+    const id = (/"externalId":"(UC[\w-]+)"/.exec(text) ?? /youtube\.com\/channel\/(UC[\w-]+)/.exec(text) ?? /"channelId":"([\w-]+)"/.exec(text))?.[1];
     if (id) return (await confirm(youtubeFeed(id), fetchFn)) ?? { found: false, reason: NOT_FOUND };
   }
 

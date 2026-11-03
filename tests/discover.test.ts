@@ -68,6 +68,13 @@ test('a YouTube @handle page is scanned for its channelId', async () => {
   expect(await discoverFeed('https://www.youtube.com/@example', { fetchFn })).toMatchObject({ found: true, feedUrl: feed, suggestedType: 'video' });
 });
 
+test('a YouTube @handle page uses its own externalId, not a related channel\'s channelId', async () => {
+  const own = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCowner000000000000000A';
+  const other = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCother000000000000000B';
+  const fetchFn = fakeFetch({ 'https://www.youtube.com/@example': fixture('html/youtube-handle-related.html'), [own]: fixture('feeds/youtube.xml'), [other]: fixture('feeds/youtube.xml') });
+  expect(await discoverFeed('https://www.youtube.com/@example', { fetchFn })).toMatchObject({ found: true, feedUrl: own });
+});
+
 test('a podcast feed is suggested as podcast', async () => {
   const fetchFn = fakeFetch({ 'https://pod.dev/rss': fixture('feeds/podcast.xml') });
   expect(await discoverFeed('https://pod.dev/rss', { fetchFn })).toMatchObject({ found: true, suggestedType: 'podcast' });

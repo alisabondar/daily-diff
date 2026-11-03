@@ -27,8 +27,21 @@ Removed because no official feed could be located and confirmed; re-add via a pa
 | podcasts | WSJ Tech News Briefing | feed not confirmed |
 | podcasts | Latent Space podcast | same publication feed as ai-news Latent Space (plan: skip) |
 | podcasts | Hard Fork | nytimes.com not reachable by the agent |
-| youtube | all 7 channels | channel IDs not confirmed; pack ships empty |
 | security | Prompt Armor | no feed on promptarmor.com/resources |
 | security | Simon Willison: prompt injection | tag feed URL not confirmed |
 
 Filled in: Ben's Bites (`bensbites.com/feed`), Dwarkesh Podcast (`dwarkesh.com/feed`), Software Engineering Daily (`softwareengineeringdaily.com/category/podcast/feed`) — all OK in the run above.
+
+## YouTube (2026-11-03)
+
+Channel IDs come from each `@handle` page's `externalId` (it matches the canonical `/channel/` link), found with the app's own discovery (`POST /api/sources/discover`). Each feed was confirmed to parse, with 3 preview items and the channel's own title.
+
+| Channel | Channel ID | Latest video |
+|---|---|---|
+| Anthropic | UCrDwWp7EBBv4NwvScIpBDOA | 2026-09-23 |
+| OpenAI | UCXZCJLdBC09xxGZ6gcdrc6A | 2026-11-03 |
+| Google DeepMind | UCP7jMXSY2xbc3KCAE0MHQ-A | 2026-10-27 |
+| Fireship | UCsBjURrPoezykLs9EqgamOA | 2026-11-03 |
+| AI Explained | UCNJ1Ymd5yFuUPtn21xtRbbw | 2026-11-02 |
+| Two Minute Papers | UCbfYPyITQ-7l4upoX8nvctg | 2026-10-30 |
+| ThePrimeagen | UC8ENHE5xdFSwx71u3fDH5Xw | 2026-08-06 |
