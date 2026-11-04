@@ -1,1 +1,39 @@
 @import 'tailwindcss';
+
+/* "Calm" theme (from /fmk, design G): sage paper, Optima, softened topic colors. Neutrals are remapped to sage. */
+@theme {
+  --font-sans: Optima, Candara, 'Segoe UI', system-ui, sans-serif;
+  --color-paper: #f3f1ea;
+  --color-neutral-50: #f8f7f2;
+  --color-neutral-100: #ecebe3;
+  --color-neutral-200: #dfddd2;
+  --color-neutral-300: #c9cbbd;
+  --color-neutral-400: #9aa391;
+  --color-neutral-500: #6b7066;
+  --color-neutral-600: #545950;
+  --color-neutral-700: #3f443b;
+  --color-neutral-800: #2e322b;
+  --color-neutral-900: #2b2e28;
+  --color-neutral-950: #1b1d19;
+}
+
+:root {
+  --topic-ai: #7a6aa8;
+  --topic-dev-tools: #4f8a8b;
+  --topic-security: #b0574a;
+  --topic-infra: #5f8a5a;
+  --topic-industry: #b08a45;
+  --topic-research: #7b8a9e;
+  --topic-other: #8a8a7e;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --topic-ai: #a99bd6;
+    --topic-dev-tools: #7fb8b9;
+    --topic-security: #d98a7e;
+    --topic-infra: #93bb8d;
+    --topic-industry: #d6b273;
+    --topic-research: #a7b6c9;
+    --topic-other: #b3b3a6;
+  }
+}

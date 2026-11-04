@@ -66,11 +66,10 @@ export function App() {
   }, [status, route?.page]);
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <nav className="mx-auto flex max-w-3xl gap-6 px-6 py-5 text-sm">
-        <span className="font-semibold">Daily Diff</span>
+    <div className="min-h-screen bg-paper text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <nav className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 px-6 pt-6 text-xs uppercase tracking-[0.18em]">
         {NAV.map(([href, label]) => (
-          <a key={href} href={href} className={`hover:underline ${'#' + path === href ? 'font-semibold' : 'text-neutral-500'}`}>
+          <a key={href} href={href} className={`hover:text-neutral-900 dark:hover:text-neutral-100 ${'#' + path === href ? 'font-semibold text-neutral-900 dark:text-neutral-100' : 'text-neutral-500'}`}>
             {label}
           </a>
         ))}
