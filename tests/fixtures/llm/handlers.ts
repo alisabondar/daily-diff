@@ -13,12 +13,19 @@ const categoryFor = (title: string, types: string): string => {
   return 'headline';
 };
 
+const topicFor = (title: string): string => {
+  if (/model|llm|agent/i.test(title)) return 'ai';
+  if (/show hn|tool|sdk|db\b/i.test(title)) return 'dev-tools';
+  if (/scal|ship/i.test(title)) return 'infra';
+  return 'industry';
+};
+
 const SECTION: Record<string, string> = { model: 'models', tool: 'tools', headline: 'headlines', video: 'watch' };
 
 export const handlers: FakeHandlers = {
   group: (prompt) => ({ stories: lines(prompt).map(([id, , title]) => ({ title: title!.slice(0, 80), itemIds: [Number(id)] })) }),
   score: (prompt) => ({
-    scores: lines(prompt).map(([id, title, types]) => ({ storyId: Number(id), score: 8, category: categoryFor(title!, types!) })),
+    scores: lines(prompt).map(([id, title, types]) => ({ storyId: Number(id), score: 8, category: categoryFor(title!, types!), topic: topicFor(title!) })),
   }),
   summarize: (prompt) => ({
     summary: `${prompt.split('\n')[0]!.replace(/^Story: /, '')} — a short, plain summary of what happened and why it matters.`,

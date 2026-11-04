@@ -2,6 +2,16 @@
 
 ## Open
 
+### Change (2026-11-03): topic categories and the "calm" Today redesign (from /fmk)
+- **Requested and approved by human (2026-11-03):** "you didn't categorize the articles at all", then a 6-round /fmk ending with design G "calm". Log: `.scratch/fmk/fmk-log.md`.
+- **Topics (backend):** new enum `TOPICS = ai | dev-tools | security | infra | industry | research | other` and a nullable `stories.topic` column (migration 0002). S4 returns a `topic` per story in the same batched call (no extra LLM calls). Missing → `other`; raw digests → `other`. Stories in the API also carry `topic` and `readMinutes` (item text at 230 wpm, minimum 1).
+- **Today (UI):** replaces step 16's Highlights/More tabs with one page:
+  - a masthead with story count and total minutes;
+  - a numbered top 3 (the first three Highlights in compose order), each with a summary and margin notes (topic, read time, source);
+  - "More by topic": every other story from both tabs, grouped by topic;
+  - the collapsed Learn box and a sign-off.
+  The palette is sage paper with Optima (system stack: Optima → Candara → system sans; Optima can't be bundled for licensing reasons), with a dark variant via `prefers-color-scheme`. Highlight sections and the cap still drive what makes the top 3.
+
 ### Step 24 audit fix (2026-11-03): YouTube discovery used the wrong channel, and the pack was empty
 - **Problem:** step 14 scans a `@handle` page for `"channelId"`, but on live pages that key appears only for *related* channels. @Fireship resolved to "Beyond Fireship" and @ThePrimeagen to "The PrimeTime", and five other channels resolved to nothing. The page's own id is `"externalId"`, which matches the canonical `/channel/UC…` link. Because of this, step 3 shipped the YouTube pack empty.
 - **Fix:** discovery prefers `"externalId"`, then the canonical link, then `"channelId"` as before. There's a new test with a fixture that contains related channels. The YouTube pack now has the 7 channels from Part D, verified live (see `src/packs/VERIFY.md`), with `defaultEnabled: true` per source so enabling the pack switches them on.

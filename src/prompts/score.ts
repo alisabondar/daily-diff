@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { Category } from '../db/schema.js';
+import { Category, Topic } from '../db/schema.js';
 import type { StoryWithItems } from '../pipeline/context.js';
 
-export const ScoreSchema = z.object({ scores: z.array(z.object({ storyId: z.number().int(), score: z.number(), category: Category })) });
+export const ScoreSchema = z.object({ scores: z.array(z.object({ storyId: z.number().int(), score: z.number(), category: Category, topic: Topic.optional() })) });
 
 export function scoreSystem(profile: string): string {
   const who = profile.trim()
@@ -16,6 +16,7 @@ Rules:
 - Use "model" only for new or updated AI model releases.
 - Anything from a video source is "video" unless it is a model release.
 - Anything from a podcast source is "podcast".
+- topic is the subject area, one of: ai (AI models, research labs, AI products), dev-tools (languages, frameworks, libraries, developer products), security, infra (cloud, databases, networking, ops), industry (companies, funding, policy, regulation), research (papers and non-AI science), other.
 - Return one entry for every story id you are given.
 Respond with JSON matching the schema.`;
 }

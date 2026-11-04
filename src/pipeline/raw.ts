@@ -17,7 +17,7 @@ export function buildRaw(db: Db, digest: Digest, error: { code: Exclude<ErrorCod
     const positions = new Map<string, number>();
     for (const item of items) {
       const category = CATEGORY_FOR_SOURCE[types.get(item.sourceId) ?? 'news'];
-      const { id } = tx.insert(stories).values({ digestId: digest.id, title: item.title, summary: item.excerpt, category }).returning({ id: stories.id }).get();
+      const { id } = tx.insert(stories).values({ digestId: digest.id, title: item.title, summary: item.excerpt, category, topic: 'other' }).returning({ id: stories.id }).get();
       tx.insert(storyItems).values({ storyId: id, itemId: item.id }).run();
       const section = moreSectionFor(category);
       const position = positions.get(section) ?? 0;

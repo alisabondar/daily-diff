@@ -107,7 +107,7 @@ test('raw digest: one story per window item, summary = excerpt, newest first', a
   await ensureToday(deps(db, fetchFn, new FakeLlm({ ...handlers, group: () => new LlmError('no', 'auth', false) })));
   const rows = db.select().from(stories).all();
   const pod = rows.find((s) => s.title === 'Episode 42: Agents')!;
-  expect(pod).toMatchObject({ summary: 'We talk about agents.', category: 'podcast' });
+  expect(pod).toMatchObject({ summary: 'We talk about agents.', category: 'podcast', topic: 'other' });
   const entry = db.select().from(digestEntries).where(eq(digestEntries.storyId, pod.id)).get()!;
   expect(entry).toMatchObject({ tab: 'more', section: 'podcasts' });
   const longReads = db.select().from(digestEntries).where(eq(digestEntries.section, 'long-reads')).all().sort((a, b) => a.position - b.position);

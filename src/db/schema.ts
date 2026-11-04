@@ -12,6 +12,7 @@ export const DIGEST_KINDS = ['daily', 'catchup'] as const;
 export const DIGEST_STATUSES = ['running', 'done', 'failed'] as const;
 export const LEARN_TYPES = ['concept', 'quickstart'] as const;
 export const ERROR_CODES = ['auth', 'llm', 'unknown'] as const;
+export const TOPICS = ['ai', 'dev-tools', 'security', 'infra', 'industry', 'research', 'other'] as const;
 
 export const SourceType = z.enum(SOURCE_TYPES);
 export const SourceKind = z.enum(SOURCE_KINDS);
@@ -22,6 +23,7 @@ export const DigestKind = z.enum(DIGEST_KINDS);
 export const DigestStatus = z.enum(DIGEST_STATUSES);
 export const LearnType = z.enum(LEARN_TYPES);
 export const ErrorCode = z.enum(ERROR_CODES);
+export const Topic = z.enum(TOPICS);
 
 export type SourceType = z.infer<typeof SourceType>;
 export type SourceKind = z.infer<typeof SourceKind>;
@@ -32,6 +34,7 @@ export type DigestKind = z.infer<typeof DigestKind>;
 export type DigestStatus = z.infer<typeof DigestStatus>;
 export type LearnType = z.infer<typeof LearnType>;
 export type ErrorCode = z.infer<typeof ErrorCode>;
+export type Topic = z.infer<typeof Topic>;
 
 export interface Stat { label: string; value: string; sourceUrl: string }
 export interface QuizQuestion { q: string; choices: string[]; answerIndex: number }
@@ -93,6 +96,7 @@ export const stories = sqliteTable('stories', {
   digestId: integer('digest_id').notNull().references(() => digests.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   category: text('category', { enum: CATEGORIES }),
+  topic: text('topic', { enum: TOPICS }),
   score: integer('score'),
   summary: text('summary'),
   stats: text('stats', { mode: 'json' }).$type<Stat[]>(),

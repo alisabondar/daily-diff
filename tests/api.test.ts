@@ -111,7 +111,9 @@ test('GET /api/digests/:date returns sections, stories, links and learn; 400 / 4
   const order = ['models', 'tools', 'headlines', 'watch'];
   expect(json.highlights.map((h: any) => order.indexOf(h.section))).toEqual([...json.highlights.map((h: any) => order.indexOf(h.section))].sort());
   const story = json.highlights[0].stories[0];
-  expect(Object.keys(story).sort()).toEqual(['category', 'cons', 'favorite', 'id', 'links', 'pros', 'stats', 'summary', 'title']);
+  expect(Object.keys(story).sort()).toEqual(['category', 'cons', 'favorite', 'id', 'links', 'pros', 'readMinutes', 'stats', 'summary', 'title', 'topic']);
+  expect(story.topic).toMatch(/^(ai|dev-tools|security|infra|industry|research|other)$/);
+  expect(story.readMinutes).toBeGreaterThanOrEqual(1);
   expect(story.links[0]).toHaveProperty('sourceTitle');
   expect(story.favorite).toBeNull();
   expect(json.more.map((m: any) => m.section)).toEqual(expect.arrayContaining(['podcasts']));

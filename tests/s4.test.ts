@@ -3,6 +3,7 @@ import { Config } from '../src/config.js';
 import { digests, stories, storyItems } from '../src/db/schema.js';
 import { FakeLlm } from '../src/llm/fake.js';
 import { runS4 } from '../src/pipeline/s4-score.js';
+import { scoreSystem } from '../src/prompts/score.js';
 import { ctx, seedDigest, seedItem, seedSource, testDb } from './helpers.js';
 
 function setup() {
@@ -74,4 +75,21 @@ test('stories are scored in batches of 50', async () => {
   const fake = new FakeLlm({ score: () => ({ scores: [] }) });
   await runS4(ctx(db, fake));
   expect(fake.calls).toHaveLength(3);
+});
+
+test('topics are stored; an omitted topic or a missing story becomes other', async () => {
+  const { db, story } = setup();
+  const a = story('A', 'news');
+  const b = story('B', 'news');
+  const missing = story('C', 'blog');
+  const fake = new FakeLlm({ score: () => ({ scores: [{ storyId: a.id, score: 7, category: 'tool', topic: 'security' }, { storyId: b.id, score: 5, category: 'headline' }] }) });
+  await runS4(ctx(db, fake));
+  const rows = byId(db);
+  expect(rows.get(a.id)!.topic).toBe('security');
+  expect(rows.get(b.id)!.topic).toBe('other');
+  expect(rows.get(missing.id)!.topic).toBe('other');
+});
+
+test('the score prompt lists every topic', () => {
+  for (const t of ['ai', 'dev-tools', 'security', 'infra', 'industry', 'research', 'other']) expect(scoreSystem('')).toContain(t);
 });
