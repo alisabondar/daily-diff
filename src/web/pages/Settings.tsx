@@ -7,7 +7,7 @@ type Provider = SettingsData['providers'][number]['id'];
 export interface ProviderForm { provider?: Provider; fastModel: string; strongModel: string; baseUrl: string }
 type TestResult = InferResponseType<typeof api.settings.test.$post>;
 
-export const field = 'w-full rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700';
+export const field = 'w-full rounded border border-neutral-300 bg-neutral-50 px-3 py-2 placeholder:text-neutral-400 disabled:border-dashed disabled:bg-transparent disabled:text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:disabled:bg-transparent';
 const label = 'block space-y-1 text-sm';
 
 export const formFrom = (s: SettingsData, provider = s.provider): ProviderForm => ({
@@ -66,7 +66,7 @@ export function ProviderFields({ settings, form, setForm, onTested, onRefresh }:
             <div className={label}>
               <span>API key</span>
               {p.keySource === 'env' ? (
-                <p className="text-neutral-500">Using key from ${p.envVar}</p>
+                <p className="text-neutral-500">Using key from <code>{p.envVar}</code></p>
               ) : p.keySource === 'file' ? (
                 <p className="text-neutral-500">Using {p.envVar} from {p.id === settings.provider && settings.keyFile ? settings.keyFile : 'a .env file'}</p>
               ) : (
@@ -85,7 +85,7 @@ export function ProviderFields({ settings, form, setForm, onTested, onRefresh }:
             </label>
           )}
           <div className="flex items-center gap-3 text-sm">
-            <button onClick={runTest} disabled={test === 'running'} className="rounded border border-neutral-300 px-3 py-1 dark:border-neutral-700">
+            <button onClick={runTest} disabled={test === 'running'} className="rounded border border-neutral-300 px-3 py-1 hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800">
               {test === 'running' ? 'Testing…' : 'Test connection'}
             </button>
             {test && test !== 'running' && (test.ok ? <span className="text-green-600">✓ Connected</span> : <span className="text-red-600">{test.message}</span>)}
@@ -132,32 +132,38 @@ export function Settings() {
       relevanceThreshold: threshold,
     };
     const res = await api.settings.$put({}, jsonBody(body));
-    setSaved(res.ok ? 'Saved' : ((await res.json()) as { error?: string }).error ?? 'Could not save.');
-    if (res.ok) load();
+    setSaved(res.ok ? '✓ Saved' : ((await res.json()) as { error?: string }).error ?? 'Could not save.');
+    if (res.ok) {
+      load();
+      setTimeout(() => setSaved(null), 2500);
+    }
   };
 
   return (
-    <div className="max-w-xl space-y-8">
+    <div className="mx-auto max-w-xl space-y-8">
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Model provider</h2>
         <ProviderFields settings={settings} form={form} setForm={setForm} onRefresh={setSettings} />
       </section>
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Your profile</h2>
+        <p className="text-sm text-neutral-500">Daily Diff uses this to rank stories for you.</p>
         <textarea value={profile} onChange={(e) => setProfile(e.target.value)} rows={5} placeholder={PROFILE_PLACEHOLDER} className={field} />
       </section>
-      <section className="grid grid-cols-2 gap-4">
+      <section className="grid gap-4 sm:grid-cols-2">
         <label className={label}>
-          <span>Highlights cap (4–20)</span>
+          <span>Top stories per day <span className="text-neutral-500">(4–20)</span></span>
           <input type="number" min={4} max={20} value={cap} onChange={(e) => setCap(Number(e.target.value))} className={field} />
+          <span className="block text-xs text-neutral-500">How many stories make the front page.</span>
         </label>
         <label className={label}>
-          <span>Relevance threshold (0–10)</span>
+          <span>Relevance threshold <span className="text-neutral-500">(0–10)</span></span>
           <input type="number" min={0} max={10} value={threshold} onChange={(e) => setThreshold(Number(e.target.value))} className={field} />
+          <span className="block text-xs text-neutral-500">Stories scored below this are left out.</span>
         </label>
       </section>
       <div className="flex items-center gap-3">
-        <button onClick={save} className="rounded bg-neutral-900 px-4 py-2 text-white dark:bg-neutral-100 dark:text-neutral-900">Save</button>
+        <button onClick={save} className="rounded bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300">Save settings</button>
         {saved && <span className="text-sm text-neutral-500">{saved}</span>}
       </div>
     </div>

@@ -16,13 +16,13 @@ function Quiz({ q }: { q: Question }) {
             key={i}
             onClick={() => setPicked(i)}
             disabled={picked !== null}
-            className={`rounded border px-3 py-1 text-left ${picked === null ? 'border-neutral-300 dark:border-neutral-700' : i === q.answerIndex ? 'border-green-600' : i === picked ? 'border-red-600' : 'border-neutral-300 opacity-60 dark:border-neutral-700'}`}
+            className={`rounded border px-3 py-1 text-left transition-colors ${picked === null ? 'border-neutral-300 hover:border-neutral-500 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800' : i === q.answerIndex ? 'border-green-600 bg-green-50 dark:bg-green-950/40' : i === picked ? 'border-red-600 bg-red-50 dark:bg-red-950/40' : 'border-neutral-300 opacity-60 dark:border-neutral-700'}`}
           >
             {c}
           </button>
         ))}
       </div>
-      {picked !== null && <p className="text-sm">{picked === q.answerIndex ? '✓ Correct' : `✗ The answer is: ${q.choices[q.answerIndex]}`}</p>}
+      {picked !== null && <p className="text-sm">{picked === q.answerIndex ? '✓ Correct' : `Not quite. The answer is: ${q.choices[q.answerIndex]}`}</p>}
     </div>
   );
 }
@@ -37,7 +37,11 @@ export function LearnSection({ learn }: { learn: Learn }) {
   return (
     <details id="sec-learn" className="group mt-10 space-y-4 rounded-xl border border-dashed border-neutral-400 px-5 py-4 dark:border-neutral-600">
       <summary className="cursor-pointer list-none">
-        📚 <span className="font-semibold">Learn something new</span> <span className="text-sm text-neutral-500">· {learn.concept.title} <span className="group-open:hidden">(show ▸)</span></span>
+        <span className="flex items-baseline gap-2">
+          <span className="inline-block text-neutral-500 transition-transform group-open:rotate-90">›</span>
+          <span className="font-semibold">Learn something new</span>
+          <span className="text-sm text-neutral-500">· {learn.concept.title}</span>
+        </span>
       </summary>
       <div className="space-y-4 rounded-xl bg-neutral-50 p-5 dark:bg-neutral-900">
         <h3 className="text-lg font-semibold">{learn.concept.title}</h3>

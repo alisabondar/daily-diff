@@ -61,19 +61,21 @@ export function App() {
   }, []);
 
   const route = match(path);
+  // An archived digest (#/d/:date) belongs to Archive.
+  const isCurrent = (href: string) => href === '#' + path || (href === '#/archive' && route?.page === 'digest');
   useEffect(() => {
     if (status && !status.onboarded && route?.page !== 'onboarding') window.location.hash = '#/onboarding';
   }, [status, route?.page]);
 
   return (
     <div className="min-h-screen bg-paper text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <nav className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 px-6 pt-6 text-xs uppercase tracking-[0.18em]">
+      {route?.page !== 'onboarding' && <nav className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-3.5 gap-y-2 px-4 pt-6 text-[11px] uppercase tracking-[0.08em] sm:px-6 sm:text-xs sm:gap-x-6 sm:tracking-[0.18em]">
         {NAV.map(([href, label]) => (
-          <a key={href} href={href} className={`hover:text-neutral-900 dark:hover:text-neutral-100 ${'#' + path === href ? 'font-semibold text-neutral-900 dark:text-neutral-100' : 'text-neutral-500'}`}>
+          <a key={href} href={href} aria-current={isCurrent(href) ? 'page' : undefined} className={`transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 ${isCurrent(href) ? 'font-semibold text-neutral-900 dark:text-neutral-100' : 'text-neutral-500'}`}>
             {label}
           </a>
         ))}
-      </nav>
+      </nav>}
       <main className="mx-auto max-w-3xl px-6 py-8 leading-relaxed">
         {!route ? (
           <p>Not found.</p>

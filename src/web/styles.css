@@ -28,6 +28,8 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Secondary text needs a lighter grey on the dark ground to stay readable (about 5:1). */
+    --color-neutral-500: #8d9386;
     --topic-ai: #a99bd6;
     --topic-dev-tools: #7fb8b9;
     --topic-security: #d98a7e;
@@ -36,4 +38,29 @@
     --topic-research: #a7b6c9;
     --topic-other: #b3b3a6;
   }
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-neutral-400);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  :root {
+    accent-color: var(--color-neutral-700);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { accent-color: var(--color-neutral-300); }
+  }
+  button:not(:disabled), summary {
+    cursor: pointer;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    main > * {
+      animation: page-in 180ms ease-out;
+    }
+  }
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(4px); }
 }

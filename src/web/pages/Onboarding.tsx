@@ -12,7 +12,7 @@ const EXAMPLE_PROFILES = [
 ];
 
 const STEPS = ['Provider', 'Profile', 'Packs'];
-const primary = 'rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900';
+const primary = 'rounded bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-700 disabled:opacity-40 disabled:hover:bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300';
 
 export function Onboarding({ onFinish }: { onFinish: () => Promise<void> }) {
   const [step, setStep] = useState(0);
@@ -57,18 +57,21 @@ export function Onboarding({ onFinish }: { onFinish: () => Promise<void> }) {
   };
 
   return (
-    <div className="max-w-xl space-y-8">
-      <h1 className="text-2xl font-semibold">Welcome to Daily Diff</h1>
+    <div className="mx-auto max-w-xl space-y-8">
+      <h1 className="pt-6 text-3xl font-semibold tracking-tight">Welcome to The Daily Diff</h1>
       <ol className="flex gap-6 text-sm">
         {STEPS.map((s, i) => (
-          <li key={s} className={i === step ? 'font-semibold' : 'text-neutral-500'}>{i + 1}. {s}</li>
+          <li key={s} aria-current={i === step ? 'step' : undefined} className={i === step ? 'font-semibold' : i < step ? 'text-neutral-700 dark:text-neutral-300' : 'text-neutral-500'}>{i < step ? '✓' : `${i + 1}.`} {s}</li>
         ))}
       </ol>
 
       {step === 0 && (
         <section className="space-y-6">
           <ProviderFields settings={settings} form={form} setForm={setForm} onTested={setTested} onRefresh={setSettings} />
-          <button onClick={saveProvider} disabled={!tested} className={primary}>Next</button>
+          <div className="flex items-center gap-3">
+            <button onClick={saveProvider} disabled={!tested} className={primary}>Next</button>
+            {!tested && <span className="text-sm text-neutral-500">Test the connection to continue.</span>}
+          </div>
         </section>
       )}
 
@@ -106,7 +109,7 @@ export function Onboarding({ onFinish }: { onFinish: () => Promise<void> }) {
           </ul>
           <div className="flex gap-4">
             <button onClick={() => setStep(1)} className="text-sm text-neutral-500">Back</button>
-            <button onClick={finish} disabled={busy} className={primary}>Finish</button>
+            <button onClick={finish} disabled={busy} className={primary}>{busy ? 'Building your first digest…' : 'Finish'}</button>
           </div>
         </section>
       )}

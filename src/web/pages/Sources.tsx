@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import type { InferResponseType } from 'hono/client';
 import { api, jsonBody } from '../api';
+import { friendlyError } from '../components/Banner';
 
 type Source = InferResponseType<typeof api.sources.$get>[number];
 type Pack = InferResponseType<typeof api.packs.$get>[number];
 type Found = Extract<InferResponseType<typeof api.sources.discover.$post>, { found: true }>;
 
 const TYPES = ['news', 'blog', 'podcast', 'video', 'community'] as const;
-const input = 'rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700';
+const input = 'rounded border border-neutral-300 bg-paper px-2 py-1 placeholder:text-neutral-400 dark:border-neutral-700 dark:bg-neutral-950';
 
 function Health({ s }: { s: Source }) {
   const color = s.lastStatus === 'ok' ? 'bg-green-500' : s.lastStatus === 'error' ? 'bg-red-500' : 'bg-neutral-400';
-  const label = s.lastStatus === 'error' ? s.lastError ?? 'error' : s.lastStatus === 'ok' ? 'ok' : 'never fetched';
-  return <span title={label} className={`inline-block h-2 w-2 shrink-0 rounded-full ${color}`} />;
+  const label = s.lastStatus === 'error' ? friendlyError(s.lastError) : s.lastStatus === 'ok' ? 'Fetched fine' : 'Not fetched yet';
+  return <span title={label} aria-label={label} className={`inline-block h-2 w-2 shrink-0 rounded-full ${color}`} />;
 }
 
 function SourceRow({ s, onChange }: { s: Source; onChange: () => void }) {
@@ -42,9 +43,12 @@ function SourceRow({ s, onChange }: { s: Source; onChange: () => void }) {
         </>
       ) : (
         <>
-          <span className="flex-1">{s.title} <span className="text-neutral-500">· {s.type}</span></span>
-          <button onClick={() => setEditing(true)} className="text-neutral-500">Edit</button>
-          {s.pack === null && <button onClick={remove} className="text-red-600">Delete</button>}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate">{s.title} <span className="text-neutral-500">· {s.type}</span></span>
+            {s.lastStatus === 'error' && <span className="block text-xs text-red-700 dark:text-red-400" title={s.lastError ?? undefined}>{friendlyError(s.lastError)}</span>}
+          </span>
+          <button onClick={() => setEditing(true)} className="text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100">Edit</button>
+          {s.pack === null && <button onClick={() => confirm(`Delete “${s.title}”? Its past stories stay in your archive.`) && remove()} className="text-neutral-500 hover:text-red-700 dark:hover:text-red-400">Delete</button>}
         </>
       )}
     </li>
@@ -82,14 +86,14 @@ function AddSource({ onAdded }: { onAdded: () => void }) {
   };
 
   return (
-    <section className="space-y-3 rounded border border-neutral-200 p-4 dark:border-neutral-800">
+    <section className="space-y-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
       <h2 className="font-semibold">Add source</h2>
       <div className="flex gap-2">
-        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a site or feed URL" className={`${input} flex-1`} />
-        <button onClick={discover} disabled={!url.trim() || busy} className="font-semibold disabled:opacity-50">{busy ? 'Looking…' : 'Find feed'}</button>
+        <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && url.trim() && !busy && discover()} placeholder="Paste a site or feed URL" className={`${input} flex-1`} />
+        <button onClick={discover} disabled={!url.trim() || busy} className="rounded bg-neutral-900 px-3 py-1 text-sm text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900">{busy ? 'Looking…' : 'Find feed'}</button>
       </div>
       {reason && (
-        <p className="text-sm text-neutral-500">No feed found — Daily Diff only supports RSS/Atom feeds. {reason}</p>
+        <p className="text-sm text-neutral-500">No feed found. Daily Diff only supports RSS and Atom feeds. {reason}</p>
       )}
       {found && (
         <div className="space-y-2 text-sm">
@@ -101,7 +105,7 @@ function AddSource({ onAdded }: { onAdded: () => void }) {
             <select value={type} onChange={(e) => setType(e.target.value as Source['type'])} className={input}>
               {TYPES.map((t) => <option key={t}>{t}</option>)}
             </select>
-            <button onClick={save} className="font-semibold">Save</button>
+            <button onClick={save} className="rounded bg-neutral-900 px-3 py-1 text-white dark:bg-neutral-100 dark:text-neutral-900">Add source</button>
           </div>
           {error && <p className="text-red-600">{error}</p>}
         </div>
@@ -111,7 +115,7 @@ function AddSource({ onAdded }: { onAdded: () => void }) {
 }
 
 export function Sources() {
-  const [list, setList] = useState<Source[]>([]);
+  const [list, setList] = useState<Source[] | null>(null);
   const [packs, setPacks] = useState<Pack[]>([]);
   const load = async () => {
     const [s, p] = await Promise.all([api.sources.$get(), api.packs.$get()]);
@@ -128,24 +132,26 @@ export function Sources() {
     load();
   };
 
+  if (!list) return null;
   const custom = list.filter((s) => s.pack === null);
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <AddSource onAdded={load} />
       {packs.map((p) => (
         <section key={p.id}>
           <label className="flex items-center gap-2 font-semibold">
             <input type="checkbox" checked={p.enabled} onChange={(e) => togglePack(p.id, e.target.checked)} />
             {p.emoji} {p.name}
+            <span className="text-sm font-normal text-neutral-500">· {list.filter((s) => s.pack === p.id).length} sources{p.enabled ? '' : ', off'}</span>
           </label>
-          <ul className="divide-y divide-neutral-200 pl-6 dark:divide-neutral-800">
+          {p.enabled && <ul className="divide-y divide-neutral-200 pl-6 dark:divide-neutral-800">
             {list.filter((s) => s.pack === p.id).map((s) => <SourceRow key={s.id} s={s} onChange={load} />)}
-          </ul>
+          </ul>}
         </section>
       ))}
       <section>
-        <h2 className="font-semibold">Custom</h2>
-        {custom.length === 0 && <p className="pl-6 text-sm text-neutral-500">None yet.</p>}
+        <h2 className="font-semibold">Your own sources</h2>
+        {custom.length === 0 && <p className="pl-6 text-sm text-neutral-500">None yet. Paste a site or feed URL above to add one.</p>}
         <ul className="divide-y divide-neutral-200 pl-6 dark:divide-neutral-800">
           {custom.map((s) => <SourceRow key={s.id} s={s} onChange={load} />)}
         </ul>

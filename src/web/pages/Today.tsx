@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { api, jsonBody, type Digest, type Status, type StoryT } from '../api';
+import { api, type Digest, type Status, type StoryT } from '../api';
 import { Banner } from '../components/Banner';
 import { FavoriteButton } from '../components/FavoriteButton';
+import { Actions, ModelDetails } from '../components/StoryCard';
 import { LearnSection } from '../components/LearnSection';
 import { ProgressStrip } from '../components/ProgressStrip';
 import { TOPIC_LABEL, TOPIC_ORDER, topicColor } from '../topics';
@@ -9,27 +10,14 @@ import { TOPIC_LABEL, TOPIC_ORDER, topicColor } from '../topics';
 // "Calm" front page (from /fmk, design G): numbered top 3 with margin notes, then everything else by topic.
 const MORE_LABEL: Record<string, string> = { 'long-reads': 'Long reads', podcasts: 'Podcasts', videos: 'Videos', other: 'Other' };
 
-function Actions({ story }: { story: StoryT }) {
-  const [favorite, setFavorite] = useState(story.favorite);
-  const [noted, setNoted] = useState(false);
-  const discussion = story.links.find((l) => l.discussionUrl)?.discussionUrl;
-  return (
-    <div className="mt-2 flex items-start gap-4 text-xs text-neutral-500">
-      <FavoriteButton storyId={story.id} favorite={favorite} onChange={setFavorite} />
-      {discussion && <a href={discussion} target="_blank" rel="noreferrer" className="hover:text-neutral-900 dark:hover:text-neutral-100">💬 Discuss</a>}
-      {noted ? <span>Thanks — noted</span> : <button onClick={async () => { await api.feedback.$post({}, jsonBody({ storyId: story.id, kind: 'less_like_this' })); setNoted(true); }}>Less like this</button>}
-    </div>
-  );
-}
-
 function TopStory({ story, n }: { story: StoryT; n: number }) {
   const color = topicColor(story.topic);
   const link = story.links[0];
   return (
-    <article className="grid grid-cols-[5.5rem_1fr] gap-5 py-5">
-      <div className="border-r border-neutral-400/50 pr-4 text-right text-xs leading-relaxed text-neutral-500">
-        <div className="text-3xl font-bold leading-none" style={{ color }}>{n}</div>
-        <div className="mt-1 font-semibold" style={{ color }}>{TOPIC_LABEL[story.topic] ?? 'Other'}</div>
+    <article className="py-5 sm:grid sm:grid-cols-[5.5rem_1fr] sm:gap-5">
+      <div className="mb-1 flex items-baseline gap-2 text-xs leading-relaxed text-neutral-500 sm:mb-0 sm:block sm:border-r sm:border-neutral-400/50 sm:pr-4 sm:text-right">
+        <div className="text-2xl font-bold leading-none sm:text-3xl" style={{ color }}>{n}</div>
+        <div className="font-semibold sm:mt-1" style={{ color }}>{TOPIC_LABEL[story.topic] ?? 'Other'}</div>
         <div>{story.readMinutes} min</div>
         {link && <div className="truncate">{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</div>}
       </div>
@@ -38,18 +26,7 @@ function TopStory({ story, n }: { story: StoryT; n: number }) {
           {link ? <a href={link.url} target="_blank" rel="noreferrer" className="hover:underline">{story.title}</a> : story.title}
         </h2>
         {story.summary && <p className="mt-1.5 text-neutral-600 dark:text-neutral-300">{story.summary}</p>}
-        {story.category === 'model' && story.stats && story.stats.length > 0 && (
-          <table className="mt-2 text-sm">
-            <caption className="text-left text-xs text-neutral-500">vendor-reported</caption>
-            <tbody>{story.stats.map((s, i) => <tr key={i}><td className="pr-4 text-neutral-500">{s.label}</td><td><a href={s.sourceUrl} target="_blank" rel="noreferrer">{s.value}</a></td></tr>)}</tbody>
-          </table>
-        )}
-        {story.category === 'model' && (story.pros?.length || story.cons?.length) ? (
-          <div className="mt-2 grid grid-cols-2 gap-4 text-sm text-neutral-600 dark:text-neutral-300">
-            <ul className="list-disc pl-5">{story.pros?.map((p, i) => <li key={i}>{p}</li>)}</ul>
-            <ul className="list-disc pl-5">{story.cons?.map((c, i) => <li key={i}>{c}</li>)}</ul>
-          </div>
-        ) : null}
+        <ModelDetails story={story} />
         <Actions story={story} />
       </div>
     </article>
@@ -62,7 +39,7 @@ function MoreItem({ story }: { story: StoryT }) {
   return (
     <li className="py-1.5">
       {link ? <a href={link.url} target="_blank" rel="noreferrer" className="font-semibold leading-snug hover:underline">{story.title}</a> : <span className="font-semibold">{story.title}</span>}
-      <div className="flex gap-3 text-xs text-neutral-500">
+      <div className="mt-0.5 flex items-start gap-3 text-xs text-neutral-500">
         <span>{link?.sourceTitle} · {story.readMinutes} min</span>
         <FavoriteButton storyId={story.id} favorite={favorite} onChange={setFavorite} />
       </div>
@@ -109,7 +86,9 @@ export function Today({ status, date }: { status: Status; date?: string }) {
           <header className="border-b border-neutral-400 pb-3 text-center">
             <h1 className="text-4xl font-semibold tracking-tight">The Daily Diff</h1>
             <p className="mt-1 text-sm text-neutral-500">
-              {digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read'} · {day} · {all.length} stories · {minutes} min
+              {[digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read', day, `${all.length} ${all.length === 1 ? 'story' : 'stories'}`, `${minutes} min`].map((part, i) => (
+                <span key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{part}</span></span>
+              ))}
             </p>
           </header>
           {all.length === 0 && !digest.meta.isRaw && <p className="py-10 text-center text-neutral-500">Quiet day — nothing above your relevance threshold.</p>}
