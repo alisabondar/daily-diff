@@ -2,15 +2,23 @@
   "id": "security",
   "name": "Security",
   "emoji": "\ud83d\udd10",
-  "defaultEnabled": false,
+  "defaultEnabled": true,
   "sources": [
+    {
+      "title": "Embrace The Red",
+      "url": "https://embracethered.com/blog/",
+      "feedUrl": "https://embracethered.com/blog/index.xml",
+      "kind": "rss",
+      "type": "blog",
+      "defaultEnabled": true
+    },
     {
       "title": "Simon Willison: prompt injection",
       "url": "https://simonwillison.net/tags/prompt-injection/",
       "feedUrl": "https://simonwillison.net/tags/prompt-injection.atom",
       "kind": "rss",
       "type": "blog",
-      "defaultEnabled": false
+      "defaultEnabled": true
     },
     {
       "title": "Krebs on Security",
@@ -18,7 +26,7 @@
       "feedUrl": "https://krebsonsecurity.com/feed/",
       "kind": "rss",
       "type": "news",
-      "defaultEnabled": false
+      "defaultEnabled": true
     },
     {
       "title": "Schneier on Security",
@@ -26,7 +34,7 @@
       "feedUrl": "https://www.schneier.com/feed/atom/",
       "kind": "rss",
       "type": "blog",
-      "defaultEnabled": false
+      "defaultEnabled": true
     }
   ]
 }

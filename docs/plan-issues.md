@@ -2,6 +2,11 @@
 
 ## Open
 
+### Change (2026-11-10): every working pack source on; Prompt Armor replaced
+- **Requested by human:** "do not have sources automatically off if they dont work, find what works and replace them".
+- **Change from Part D:** Prompt Armor, which still has no feed, is replaced by Embrace The Red (`https://embracethered.com/blog/index.xml`; prompt-injection and AI-agent security research; verified live on 2026-11-10: 200, 233 items, latest 2026-10-13). The Security pack is now on by default. Every source in the Podcasts and Security packs is on whenever its pack is on, instead of Part D's "rest off".
+- **Unchanged:** the YouTube pack stays off in onboarding, because without `YOUTUBE_API_KEY` its RSS feeds fail often. Its sources switch on when the pack is turned on.
+
 ### Change (2026-11-10): one combined Reddit feed in the Community pack
 - **Requested by human:** "let's delete it because theyre useless and wont work on any machine - are there other threads we can use for successful fetches?"
 - **Finding:** Reddit allows about one unauthenticated feed request per IP and then answers 429 to everything for a while, whichever subreddit it is. With r/programming fetched first it returned 200, and r/LocalLLaMA got the 429. Swapping in other subreddits wouldn't help.

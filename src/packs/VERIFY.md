@@ -57,3 +57,4 @@ Channel IDs come from each `@handle` page's `externalId` (it matches the canonic
 | podcasts | Latent Space podcast | skipped: latent.space serves one feed, already in ai-news | — |
 | security | Simon Willison: prompt injection | `https://simonwillison.net/tags/prompt-injection.atom` (linked from the tag page) | 200, 30 entries |
 | security | Prompt Armor | still no RSS/Atom feed on promptarmor.com | not added |
+| security | Embrace The Red (replaces Prompt Armor) | `https://embracethered.com/blog/index.xml` | 200, 233 items, latest 2026-10-13 |
