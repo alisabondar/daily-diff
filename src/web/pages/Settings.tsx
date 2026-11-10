@@ -106,8 +106,9 @@ export function Settings() {
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [form, setForm] = useState<ProviderForm | null>(null);
   const [profile, setProfile] = useState('');
-  const [cap, setCap] = useState(10);
-  const [threshold, setThreshold] = useState(5);
+  // Kept as text so a field can be cleared and retyped; parsed and range-checked on save.
+  const [cap, setCap] = useState('');
+  const [threshold, setThreshold] = useState('');
   const [saved, setSaved] = useState<string | null>(null);
 
   const load = async () => {
@@ -115,21 +116,24 @@ export function Settings() {
     setSettings(s);
     setForm(formFrom(s));
     setProfile(s.profile);
-    setCap(s.highlightsCap);
-    setThreshold(s.relevanceThreshold);
+    setCap(String(s.highlightsCap));
+    setThreshold(String(s.relevanceThreshold));
   };
   useEffect(() => {
     load();
   }, []);
 
   if (!settings || !form) return null;
+  const inRange = (v: string, min: number, max: number) => /^\d+$/.test(v) && Number(v) >= min && Number(v) <= max;
+  const capOk = inRange(cap, 4, 20);
+  const thresholdOk = inRange(threshold, 0, 10);
   const save = async () => {
     const body = {
       ...(form.provider ? withoutEnv(settings, { provider: form.provider, fastModel: form.fastModel, strongModel: form.strongModel }) : {}),
       ...(form.provider === 'ollama' ? { baseUrl: form.baseUrl } : {}),
       profile,
-      highlightsCap: cap,
-      relevanceThreshold: threshold,
+      highlightsCap: Number(cap),
+      relevanceThreshold: Number(threshold),
     };
     const res = await api.settings.$put({}, jsonBody(body));
     setSaved(res.ok ? '✓ Saved' : ((await res.json()) as { error?: string }).error ?? 'Could not save.');
@@ -146,24 +150,24 @@ export function Settings() {
         <p className="text-sm text-neutral-500">Daily Diff uses this to rank stories for you.</p>
         <textarea value={profile} onChange={(e) => setProfile(e.target.value)} rows={5} placeholder={PROFILE_PLACEHOLDER} className={field} />
       </section>
+      <section className="grid gap-4 sm:grid-cols-2">
+        <label className={label}>
+          <span>Top stories per day <span className="text-neutral-500">(4–20)</span></span>
+          <input type="text" inputMode="numeric" value={cap} onChange={(e) => setCap(e.target.value.replace(/\D/g, '').slice(0, 2))} onFocus={(e) => e.target.select()} aria-invalid={!capOk} className={`${field} ${capOk ? '' : 'border-red-600 dark:border-red-500'}`} />
+          <span className={`block text-xs ${capOk ? 'text-neutral-500' : 'text-red-700 dark:text-red-400'}`}>{capOk ? 'How many stories make the front page.' : 'Enter a number from 4 to 20.'}</span>
+        </label>
+        <label className={label}>
+          <span>Relevance threshold <span className="text-neutral-500">(0–10)</span></span>
+          <input type="text" inputMode="numeric" value={threshold} onChange={(e) => setThreshold(e.target.value.replace(/\D/g, '').slice(0, 2))} onFocus={(e) => e.target.select()} aria-invalid={!thresholdOk} className={`${field} ${thresholdOk ? '' : 'border-red-600 dark:border-red-500'}`} />
+          <span className={`block text-xs ${thresholdOk ? 'text-neutral-500' : 'text-red-700 dark:text-red-400'}`}>{thresholdOk ? 'Stories scored below this are left out.' : 'Enter a number from 0 to 10.'}</span>
+        </label>
+      </section>
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Model provider</h2>
         <ProviderFields settings={settings} form={form} setForm={setForm} onRefresh={setSettings} />
       </section>
-      <section className="grid gap-4 sm:grid-cols-2">
-        <label className={label}>
-          <span>Top stories per day <span className="text-neutral-500">(4–20)</span></span>
-          <input type="number" min={4} max={20} value={cap} onChange={(e) => setCap(Number(e.target.value))} className={field} />
-          <span className="block text-xs text-neutral-500">How many stories make the front page.</span>
-        </label>
-        <label className={label}>
-          <span>Relevance threshold <span className="text-neutral-500">(0–10)</span></span>
-          <input type="number" min={0} max={10} value={threshold} onChange={(e) => setThreshold(Number(e.target.value))} className={field} />
-          <span className="block text-xs text-neutral-500">Stories scored below this are left out.</span>
-        </label>
-      </section>
       <div className="flex items-center gap-3">
-        <button onClick={save} className="rounded bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300">Save settings</button>
+        <button onClick={save} disabled={!capOk || !thresholdOk} className="rounded disabled:opacity-40 bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300">Save settings</button>
         {saved && <span className="text-sm text-neutral-500">{saved}</span>}
       </div>
     </div>
