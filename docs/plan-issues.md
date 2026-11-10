@@ -2,6 +2,12 @@
 
 ## Open
 
+### Change (2026-11-10): one combined Reddit feed in the Community pack
+- **Requested by human:** "let's delete it because theyre useless and wont work on any machine - are there other threads we can use for successful fetches?"
+- **Finding:** Reddit allows about one unauthenticated feed request per IP and then answers 429 to everything for a while, whichever subreddit it is. With r/programming fetched first it returned 200, and r/LocalLLaMA got the 429. Swapping in other subreddits wouldn't help.
+- **Change:** the three Reddit sources in Part D's Community pack are replaced by one combined feed, `https://www.reddit.com/r/LocalLLaMA+MachineLearning+programming/top/.rss?t=day`, which makes one request. It was verified live on 2026-11-10: 200, 25 entries (19 LocalLLaMA, 5 programming, 1 MachineLearning).
+- **Note:** `seedSources` only upserts, so the old rows stay in existing databases. The human's own database was cleaned by hand. S5's Reddit comment fetches are still best-effort and can 429.
+
 ### Change (2026-11-09): YouTube Data API when `YOUTUBE_API_KEY` is set
 - **Why:** YouTube's RSS endpoint is failing intermittently (see the entry below). The YouTube Data API v3 is the supported route.
 - **Approved by human (2026-11-09):** after the hybrid was proposed, "ok so how do i add an api key now so we can test", then "ok it works!" once their key was in `.env`.

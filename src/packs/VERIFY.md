@@ -45,3 +45,5 @@ Channel IDs come from each `@handle` page's `externalId` (it matches the canonic
 | AI Explained | UCNJ1Ymd5yFuUPtn21xtRbbw | 2026-11-02 |
 | Two Minute Papers | UCbfYPyITQ-7l4upoX8nvctg | 2026-10-30 |
 | ThePrimeagen | UC8ENHE5xdFSwx71u3fDH5Xw | 2026-08-06 |
+
+2026-11-10: the three Reddit rows above were replaced by one combined feed, `r/LocalLLaMA+MachineLearning+programming/top/.rss?t=day`: 200, 25 entries (see docs/plan-issues.md).

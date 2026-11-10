@@ -1,7 +1,7 @@
 {
   "id": "community",
   "name": "Community",
-  "emoji": "🌐",
+  "emoji": "\ud83c\udf10",
   "defaultEnabled": true,
   "sources": [
     {
@@ -13,23 +13,9 @@
       "hnTags": "front_page"
     },
     {
-      "title": "r/LocalLLaMA",
-      "url": "https://www.reddit.com/r/LocalLLaMA/",
-      "feedUrl": "https://www.reddit.com/r/LocalLLaMA/top/.rss?t=day",
-      "kind": "rss",
-      "type": "community"
-    },
-    {
-      "title": "r/MachineLearning",
-      "url": "https://www.reddit.com/r/MachineLearning/",
-      "feedUrl": "https://www.reddit.com/r/MachineLearning/top/.rss?t=day",
-      "kind": "rss",
-      "type": "community"
-    },
-    {
-      "title": "r/programming",
-      "url": "https://www.reddit.com/r/programming/",
-      "feedUrl": "https://www.reddit.com/r/programming/top/.rss?t=day",
+      "title": "Reddit: LocalLLaMA, MachineLearning, programming",
+      "url": "https://www.reddit.com/r/LocalLLaMA+MachineLearning+programming/",
+      "feedUrl": "https://www.reddit.com/r/LocalLLaMA+MachineLearning+programming/top/.rss?t=day",
       "kind": "rss",
       "type": "community"
     }

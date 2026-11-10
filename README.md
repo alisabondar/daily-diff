@@ -2,22 +2,45 @@
 
 A local-first daily AI & tech briefing. Every day it reads your feeds, groups and ranks the stories with an LLM you choose, and serves a short digest at http://127.0.0.1:4242: Highlights (about a 1–2 minute read), a More tab, and an optional Learn Something New card. Everything runs and stays on your machine.
 
-## Quick start (60 seconds)
+## Quick start
 
-Requires Node.js 20.12 or later.
+You need [Node.js](https://nodejs.org) 20.12 or later, git, and an API key for one LLM provider (Anthropic, OpenAI, Google, OpenRouter or Amazon Bedrock; or a local [Ollama](https://ollama.com), which needs no key).
+
+**1. Get the code**
 
 ```bash
-mkdir -p ~/.daily-diff
-echo 'ANTHROPIC_API_KEY=your-key-here' >> ~/.daily-diff/.env
-chmod 600 ~/.daily-diff/.env
-npx daily-diff
+git clone https://github.com/alisabondar/daily-diff.git
+cd daily-diff
+npm install
 ```
 
-Open http://127.0.0.1:4242, then work through onboarding: pick the provider (it's pre-selected when a key is found), run **Test connection**, optionally describe what you care about, and keep the default source packs. The first digest builds in about two minutes. After that, Daily Diff builds a new one the first time you open it each day.
+**2. Add your key.** Create a `.env` file in the `daily-diff` folder with one line for your provider:
 
-Options: `--port <n>`, `--version`, `--help`.
+```bash
+echo 'ANTHROPIC_API_KEY=your-key-here' >> .env
+chmod 600 .env
+```
 
-From a clone of this repo, `npm start` builds and runs it in one step (pass options after `--`, e.g. `npm start -- --port 4300`).
+Using another provider? Use `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY` or `OPENROUTER_API_KEY` instead, or see [Amazon Bedrock](#amazon-bedrock). `.env` is gitignored, so your key never gets committed.
+
+**3. Start it**
+
+```bash
+npm start
+```
+
+**4. Set it up.** Open http://127.0.0.1:4242 and follow the three onboarding steps:
+- **Provider:** it's pre-selected when a key is found. Click **Test connection**, then **Next**.
+- **Profile:** a sentence about what you care about. This is what ranks the stories, so be specific.
+- **Packs:** keep the defaults or pick your own.
+
+The first digest takes about two minutes. After that, a new one builds the first time you open the app each day. Leave `npm start` running in a terminal while you use it, and stop it with Ctrl+C.
+
+**Optional: reliable YouTube.** YouTube's RSS feeds fail often. With a free [YouTube Data API key](https://console.cloud.google.com/apis/library/youtube.googleapis.com) (enable "YouTube Data API v3", create an API key and restrict it to that API), add `YOUTUBE_API_KEY=…` to `.env` and channels are fetched through the API instead. A daily build uses about 14 of the 10,000 free units.
+
+**Updating:** `git pull && npm install`, then `npm start` again. Your data in `~/.daily-diff` is kept.
+
+Options: `npm start -- --port 4300` runs it on another port; `--version` and `--help` work too.
 
 ## Cost and build time (measured)
 
@@ -39,6 +62,7 @@ Cost = tokens × Claude Sonnet 5.5's list price of $2 / MTok input and $10 / MTo
   - the feeds you've enabled;
   - `hn.algolia.com` (Hacker News);
   - `reddit.com` (comments, best-effort);
+  - `www.googleapis.com` (YouTube Data API, only when `YOUTUBE_API_KEY` is set);
   - URLs you paste into **Add source** (including YouTube channel pages);
   - GitHub READMEs and docs pages for the quick-start card;
   - your configured LLM provider (for Bedrock, `bedrock-runtime.<region>.amazonaws.com`).
@@ -53,7 +77,7 @@ Daily Diff never asks for your API key in the browser, and never stores it in `c
 
 1. variables set in your shell
 2. `.env` in the folder you start Daily Diff from (e.g. the repo root when developing)
-3. `~/.daily-diff/.env` (or `$DAILY_DIFF_HOME/.env`), for `npx daily-diff` from anywhere
+3. `~/.daily-diff/.env` (or `$DAILY_DIFF_HOME/.env`), which works whatever folder you start it from
 
 `.env` files are re-read on every lookup, so edits apply without a restart. The repo's `.gitignore` already excludes `.env`.
 
@@ -66,6 +90,7 @@ Daily Diff never asks for your API key in the browser, and never stores it in `c
 | `LLM_PROVIDER` | no | `anthropic`, `openai`, `google`, `openrouter`, `ollama` or `bedrock`. Overrides Settings |
 | `LLM_MODEL` | no | Model for every stage. Overrides both model fields in Settings |
 | `LLM_FAST_MODEL` | no | A cheaper model for the light stages (grouping, scoring). Defaults to `LLM_MODEL` |
+| `YOUTUBE_API_KEY` | no | A [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com) key. When set, YouTube channels are fetched through the API instead of RSS. It's sent as a request header, never in a URL |
 | `LLM_EFFORT` | no | Reasoning effort: `provider-default`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max` |
 
 Example:
