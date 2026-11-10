@@ -14,8 +14,8 @@ const { GIFEncoder, quantize, applyPalette } = require('gifenc');
 const jpeg = require('jpeg-js');
 
 const BASE = process.argv[2] ?? 'http://127.0.0.1:4242';
-const W = 960, H = 600;
-const MIN_FRAME_MS = 40; // cap at 25 fps
+const W = 800, H = 500;
+const MIN_FRAME_MS = 66; // cap at ~15 fps (keeps the GIF under GitHub's 10 MB image limit)
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: W, height: H }, colorScheme: 'light' });
@@ -51,26 +51,47 @@ const nav = async (label) => {
   await wait(900);
 };
 
-// Today: the front page, then down to More by topic
-await wait(2200);
-await smoothScroll(1500, 2600);
-await wait(1200);
-// Learn something new
+const removeDemoFavorite = () => page.evaluate(async () => {
+  const favs = await (await fetch('/api/favorites')).json();
+  for (const st of favs.stories) if (st.favorite?.tags.includes('to-read')) await fetch(`/api/favorites/${st.id}`, { method: 'DELETE' });
+});
+try {
+// Today: save the top story with a tag (it shows up under Favorites later)
+await wait(1800);
+const top = page.locator('article').first();
+await top.getByRole('button', { name: /Save/ }).click();
+await wait(500);
+await page.getByPlaceholder('Add a tag (optional)').pressSequentially('to-read', { delay: 120 });
+await page.keyboard.press('Enter');
+await wait(400);
+await page.locator('.absolute').getByRole('button', { name: 'Save', exact: true }).click();
+await wait(1000);
+// ...then all the way down the front page
+await smoothScroll(await page.evaluate(() => document.body.scrollHeight - innerHeight), 5000);
+await wait(1000);
+// Open Learn something new and read through it
 const learn = page.locator('#sec-learn summary');
 if (await learn.count()) {
-  const y = await learn.evaluate((el) => el.getBoundingClientRect().top + scrollY - 120);
-  await smoothScroll(y, 1200);
-  await wait(500);
   await learn.click();
-  await wait(2200);
+  await wait(800);
+  const [learnEnd, distance] = await page.evaluate(() => [document.body.scrollHeight - innerHeight, document.body.scrollHeight - innerHeight - scrollY]);
+  await smoothScroll(learnEnd, Math.min(9000, Math.max(3000, distance * 3)));
+  await wait(1200);
 }
 // Archive: search past stories
 await nav('Archive');
 await page.locator('input[type=search]').pressSequentially('claude', { delay: 140 });
-await wait(2600);
+await wait(2400);
+// Favorites: the story saved above, with its tag
+await nav('Favorites');
+await wait(2200);
 // Sources
 await nav('Sources');
-await wait(2000);
+await wait(1800);
+} finally {
+  // Leave the user's data as it was: remove the favorite the demo created.
+  await removeDemoFavorite();
+}
 await cdp.send('Page.stopScreencast');
 const end = raw.at(-1).t + 1200;
 await browser.close();
@@ -82,7 +103,7 @@ const frames = kept.map((f) => jpeg.decode(Buffer.from(f.data, 'base64'), { useT
 
 // One shared palette (sampled across the clip) keeps colors steady from frame to frame.
 const sample = new Uint8Array(frames.filter((_, i) => i % Math.ceil(frames.length / 12) === 0).flatMap((f) => [...f.data]));
-const palette = quantize(sample, 256);
+const palette = quantize(sample, 128);
 const gif = GIFEncoder();
 frames.forEach((f, i) => {
   const delay = Math.max(MIN_FRAME_MS, (kept[i + 1]?.t ?? end) - kept[i].t);
