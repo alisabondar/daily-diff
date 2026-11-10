@@ -2,7 +2,7 @@
 // Rewinds that digest to stage − 1 and resumes it. Only today's date actually rebuilds,
 // because ensureToday() works on today's digest.
 import { eq } from 'drizzle-orm';
-import { loadConfig } from '../src/config.js';
+import { effectiveConfig, loadConfig } from '../src/config.js';
 import { openDb } from '../src/db/client.js';
 import { runMigrations } from '../src/db/migrate.js';
 import { digests } from '../src/db/schema.js';
@@ -23,4 +23,4 @@ if (res.changes === 0) {
   console.error(`no digest for ${date}`);
   process.exit(1);
 }
-console.log(await ensureToday({ db, getConfig: loadConfig, llmFactory: createLlm, now: () => new Date() }));
+console.log(await ensureToday({ db, getConfig: () => effectiveConfig(loadConfig()), llmFactory: createLlm, now: () => new Date() }));

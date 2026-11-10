@@ -17,7 +17,7 @@ function TopStory({ story, n }: { story: StoryT; n: number }) {
     <article className="py-5 sm:grid sm:grid-cols-[5.5rem_1fr] sm:gap-5">
       <div className="mb-1 flex items-baseline gap-2 text-xs leading-relaxed text-neutral-500 sm:mb-0 sm:block sm:border-r sm:border-neutral-400/50 sm:pr-4 sm:text-right">
         <div className="text-2xl font-bold leading-none sm:text-3xl" style={{ color }}>{n}</div>
-        <div className="font-semibold sm:mt-1" style={{ color }}>{TOPIC_LABEL[story.topic] ?? 'Other'}</div>
+        {story.topic !== 'other' && <div className="font-semibold sm:mt-1" style={{ color }}>{TOPIC_LABEL[story.topic] ?? 'Other'}</div>}
         <div>{story.readMinutes} min</div>
         {link && <div className="truncate">{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</div>}
       </div>
@@ -77,7 +77,7 @@ export function Today({ status, date }: { status: Status; date?: string }) {
 
   return (
     <div>
-      {!date && status.progress.running && <ProgressStrip message={status.progress.message} />}
+      {!date && status.progress.running && <ProgressStrip message={status.progress.message} showing={shown && shown !== status.today?.date ? shown : null} />}
       {digest && <Banner isRaw={digest.meta.isRaw} errorCode={digest.meta.errorCode} failedSources={date ? [] : status.failedSources} />}
       {!shown && !status.progress.running && <p className="text-neutral-500">No digest yet.</p>}
       {missing && <p className="text-neutral-500">No digest for {shown}.</p>}

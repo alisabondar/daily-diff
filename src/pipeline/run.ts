@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
-import { redactKey, type Config } from '../config.js';
+import { envValue, redactKey, type Config } from '../config.js';
 import type { Db } from '../db/client.js';
 import { digests } from '../db/schema.js';
 import { LlmError, type Llm } from '../llm/types.js';
@@ -86,7 +86,7 @@ async function build(deps: EnsureDeps, config: Config, today: string, existing: 
   if (digest.stage < 2) {
     try {
       progress.set(1, 'Fetching sources…');
-      const raw = await runS1(db, digest, { fetchFn: deps.fetchFn, now });
+      const raw = await runS1(db, digest, { fetchFn: deps.fetchFn, now, youtubeApiKey: envValue('YOUTUBE_API_KEY')?.value });
       progress.set(2, `Storing ${raw.length} items…`);
       runS2(db, load(db, digest.id), raw, now);
     } catch (err) {

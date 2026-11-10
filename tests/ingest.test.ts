@@ -168,3 +168,56 @@ test('a reddit 429 is retried once after 5s; a second 429 fails the source', asy
   expect(db.select().from(sources).where(eq(sources.id, retried.id)).get()!.lastStatus).toBe('ok');
   expect(db.select().from(sources).where(eq(sources.id, limited.id)).get()!.lastError).toMatch(/429/);
 });
+
+const youtube = (id: string) => `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
+
+test('youtube feeds are fetched one at a time with a 1s gap', async () => {
+  const ids = ['UCa', 'UCb', 'UCc'];
+  for (const id of ids) addSource(youtube(id), { type: 'video' });
+  const { fn, log } = timedFetch(Object.fromEntries(ids.map((id) => [youtube(id), [200]])));
+  const sleeps: number[] = [];
+  const d = addDigest('2026-10-29', computeWindow(null, now));
+  await runS1(db, d, { fetchFn: fn, now: () => now, sleep: async (ms) => { sleeps.push(ms); } });
+  expect(log).toHaveLength(3);
+  for (let i = 1; i < log.length; i++) expect(log[i]!.start).toBeGreaterThan(log[i - 1]!.end);
+  expect(sleeps).toEqual([1000, 1000]);
+  expect(reload(d).failedSourceIds).toEqual([]);
+});
+
+test('a youtube 404 or 5xx is retried twice after 3s; a third failure fails the source', async () => {
+  const recovered = addSource(youtube('UCok'), { type: 'video' });
+  const down = addSource(youtube('UCdown'), { type: 'video' });
+  const { fn, log } = timedFetch({ [youtube('UCok')]: [404, 500, 200], [youtube('UCdown')]: [404, 404, 404] });
+  const sleeps: number[] = [];
+  const d = addDigest('2026-10-29', computeWindow(null, now));
+  await runS1(db, d, { fetchFn: fn, now: () => now, sleep: async (ms) => { sleeps.push(ms); } });
+  expect(log.filter((l) => l.url === youtube('UCok'))).toHaveLength(3);
+  expect(log.filter((l) => l.url === youtube('UCdown'))).toHaveLength(3);
+  expect(sleeps.filter((ms) => ms === 3000)).toHaveLength(4);
+  expect(reload(d).failedSourceIds).toEqual([down.id]);
+  expect(db.select().from(sources).where(eq(sources.id, recovered.id)).get()!.lastStatus).toBe('ok');
+  expect(db.select().from(sources).where(eq(sources.id, down.id)).get()!.lastError).toMatch(/404/);
+});
+
+test('a youtube 403 is not retried, and other feeds are never retried', async () => {
+  addSource(youtube('UCforbidden'), { type: 'video' });
+  addSource('https://blog.dev/feed');
+  const { fn, log } = timedFetch({ [youtube('UCforbidden')]: [403, 200], 'https://blog.dev/feed': [404, 200] });
+  const d = addDigest('2026-10-29', computeWindow(null, now));
+  await runS1(db, d, { fetchFn: fn, now: () => now, sleep: async () => {} });
+  expect(log).toHaveLength(2);
+  expect(reload(d).failedSourceIds).toHaveLength(2);
+});
+
+test('with a YouTube API key, YouTube sources use the Data API instead of RSS', async () => {
+  const yt = addSource(youtube('UCabc'), { type: 'video' });
+  const f = fakeFetch({
+    'https://www.googleapis.com/youtube/v3/channels?*': JSON.stringify({ items: [{ id: 'UCabc', contentDetails: { relatedPlaylists: { uploads: 'UUabc' } } }] }),
+    'https://www.googleapis.com/youtube/v3/playlistItems?*': JSON.stringify({ items: [] }),
+  });
+  const d = addDigest('2026-10-29', computeWindow(null, now));
+  await runS1(db, d, { fetchFn: f, now: () => now, sleep: async () => {}, youtubeApiKey: 'k' });
+  expect(f.calls.map((c) => new URL(c.url).hostname)).toEqual(['www.googleapis.com', 'www.googleapis.com']);
+  expect(reload(d).failedSourceIds).toEqual([]);
+  expect(db.select().from(sources).where(eq(sources.id, yt.id)).get()!.lastStatus).toBe('ok');
+});

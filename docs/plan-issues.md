@@ -2,6 +2,20 @@
 
 ## Open
 
+### Change (2026-11-09): YouTube Data API when `YOUTUBE_API_KEY` is set
+- **Why:** YouTube's RSS endpoint is failing intermittently (see the entry below). The YouTube Data API v3 is the supported route.
+- **Approved by human (2026-11-09):** after the hybrid was proposed, "ok so how do i add an api key now so we can test", then "ok it works!" once their key was in `.env`.
+- **Design:** `src/sources/youtube-api.ts`. For each YouTube feed source (`/feeds/videos.xml?channel_id=UC…`), it calls `channels.list` (part=contentDetails) to get the uploads playlist, then `playlistItems.list` (part=snippet,contentDetails, maxResults=50). That's 2 quota units per channel per build, against a default 10,000/day (Google's "determine quota cost" page, read 2026-11-09). `search.list` isn't used.
+- **The key:** read with `envValue('YOUTUBE_API_KEY')` (process env, then `./.env`, then `$DAILY_DIFF_HOME/.env`). It's sent in the `X-Goog-Api-Key` header (verified live), never in a URL, so it can't reach error messages or logs. It's never written to config.json and never sent to the browser.
+- **Fallback:** with no key, the RSS path and the retry lane are unchanged.
+- **Rule 7:** adds `www.googleapis.com` to the outbound host list.
+
+### Real run (2026-11-09): every YouTube feed returns 404
+- **Problem:** in a real catch-up build from `~/.daily-diff`, all 7 YouTube channels failed: six with HTTP 404, Fireship with 500. The channel IDs are still correct (`@anthropic-ai` → `externalId` `UCrDwWp7EBBv4NwvScIpBDOA`), but `https://www.youtube.com/feeds/videos.xml?channel_id=…` returns 404 on repeated requests, with or without a browser User-Agent, and so does the `playlist_id=UU…` form. It looks like a change or outage on YouTube's side; it worked on 2026-11-03 (`src/packs/VERIFY.md`).
+- **Re-probe (same evening):** it's intermittent, not dead. One pass over the 7 IDs gave 200 for 2 channels, 500 for 1 and 404 for 4. Seconds later the channel that had returned 200 returned 404 six times in a row. The 404 body comes from `server: YouTube RSS Feeds server`, so the endpoint is degraded on YouTube's side.
+- **Options:** (a) wait and re-check; it may be transient. (a2) give YouTube feeds a Reddit-style retry: a short gap, a couple of retries on 404/500, and sequential fetches. (b) turn the YouTube pack off by default until the feeds return. (c) find another official feed route. No alternative has been verified, and the plan forbids guessing URLs.
+- **Decided by human (2026-11-09):** (a2). YouTube feeds are fetched one at a time with a 1s gap, and a 404/5xx is retried twice after 3s (`s1-fetch.ts`, 3 new tests in `ingest.test.ts`). In a live run of S1 on a copy of the real DB, 3 of 7 channels came back (none did before), and S1 took 31.6s. The rest still fail on bad days; they show in the banner.
+
 ### Change (2026-11-03): topic categories and the "calm" Today redesign (from /fmk)
 - **Requested and approved by human (2026-11-03):** "you didn't categorize the articles at all", then a 6-round /fmk ending with design G "calm". Log: `.scratch/fmk/fmk-log.md`.
 - **Topics (backend):** new enum `TOPICS = ai | dev-tools | security | infra | industry | research | other` and a nullable `stories.topic` column (migration 0002). S4 returns a `topic` per story in the same batched call (no extra LLM calls). Missing → `other`; raw digests → `other`. Stories in the API also carry `topic` and `readMinutes` (item text at 230 wpm, minimum 1).

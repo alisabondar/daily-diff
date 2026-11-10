@@ -10,7 +10,7 @@ export function friendlyError(raw: string | null): string {
   if (!raw) return 'Failed for an unknown reason';
   if (/timed out/i.test(raw)) return 'Didn’t respond in time';
   const http = raw.match(/HTTP (\d{3})/);
-  if (http) return http[1] === '404' ? 'Feed not found (404)' : http[1]!.startsWith('5') ? `Site error (${http[1]})` : `Refused the request (${http[1]})`;
+  if (http) return http[1] === '404' ? 'Feed not found (404)' : http[1] === '429' ? 'Rate-limited by the site (429)' : http[1]!.startsWith('5') ? `Site error (${http[1]})` : `Refused the request (${http[1]})`;
   if (/fetch failed|ENOTFOUND|ECONNREFUSED|getaddrinfo/i.test(raw)) return 'Couldn’t be reached';
   if (/xml|feed|parse|non-whitespace/i.test(raw)) return 'Didn’t return a readable feed';
   return 'Failed to load';

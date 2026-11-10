@@ -16,6 +16,7 @@ const ALLOWED_HOSTS = new Set([
   'raw.githubusercontent.com', // quick-start READMEs
   'medium.com', 'www.youtube.com', // discovery rewrites of user-pasted URLs
   'openrouter.ai', 'localhost', // providers (OpenRouter, Ollama default)
+  'www.googleapis.com', // YouTube Data API v3, only when YOUTUBE_API_KEY is set
   'bedrock-runtime.${region}.amazonaws.com', // Bedrock provider
   '${hostname}', // the server's own address in the "running at" message
 ]);
