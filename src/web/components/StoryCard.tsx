@@ -6,16 +6,21 @@ import { FavoriteButton } from './FavoriteButton';
 const ext = { target: '_blank', rel: 'noreferrer' } as const;
 const quiet = 'hover:text-neutral-900 dark:hover:text-neutral-100';
 
+/** A YouTube video among a story's links, so a video merged with an article stays reachable. */
+export const videoLink = (story: StoryT) => story.links.find((l) => /^https:\/\/(www\.)?youtube\.com\/watch\?/.test(l.url))?.url;
+
 /** Save · Discuss · Listen · Less like this, shared by every story layout. */
 export function Actions({ story, onFavoriteChange }: { story: StoryT; onFavoriteChange?: (f: StoryT['favorite']) => void }) {
   const [favorite, setFavorite] = useState(story.favorite);
   const [noted, setNoted] = useState(false);
   const discussion = story.links.find((l) => l.discussionUrl)?.discussionUrl;
   const media = story.links.find((l) => l.mediaUrl)?.mediaUrl;
+  const video = videoLink(story);
   return (
     <div className="mt-2 flex items-start gap-4 text-xs text-neutral-500">
       <FavoriteButton storyId={story.id} favorite={favorite} onChange={(f) => { setFavorite(f); onFavoriteChange?.(f); }} />
       {discussion && <a href={discussion} {...ext} className={quiet}>Discuss</a>}
+      {video && video !== story.links[0]?.url && <a href={video} {...ext} className={quiet}>▶ Watch</a>}
       {media && <a href={media} {...ext} className={quiet}>Listen</a>}
       {noted ? (
         <span>Noted, you’ll see less like this</span>

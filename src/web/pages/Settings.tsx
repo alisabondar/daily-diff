@@ -142,13 +142,13 @@ export function Settings() {
   return (
     <div className="mx-auto max-w-xl space-y-8">
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Model provider</h2>
-        <ProviderFields settings={settings} form={form} setForm={setForm} onRefresh={setSettings} />
-      </section>
-      <section className="space-y-4">
         <h2 className="text-xl font-semibold">Your profile</h2>
         <p className="text-sm text-neutral-500">Daily Diff uses this to rank stories for you.</p>
         <textarea value={profile} onChange={(e) => setProfile(e.target.value)} rows={5} placeholder={PROFILE_PLACEHOLDER} className={field} />
+      </section>
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold">Model provider</h2>
+        <ProviderFields settings={settings} form={form} setForm={setForm} onRefresh={setSettings} />
       </section>
       <section className="grid gap-4 sm:grid-cols-2">
         <label className={label}>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, type Digest, type Status, type StoryT } from '../api';
 import { Banner } from '../components/Banner';
 import { FavoriteButton } from '../components/FavoriteButton';
-import { Actions, ModelDetails } from '../components/StoryCard';
+import { Actions, ModelDetails, videoLink } from '../components/StoryCard';
 import { LearnSection } from '../components/LearnSection';
 import { ProgressStrip } from '../components/ProgressStrip';
 import { TOPIC_LABEL, TOPIC_ORDER, topicColor } from '../topics';
@@ -36,11 +36,13 @@ function TopStory({ story, n }: { story: StoryT; n: number }) {
 function MoreItem({ story }: { story: StoryT }) {
   const [favorite, setFavorite] = useState(story.favorite);
   const link = story.links[0];
+  const video = videoLink(story);
   return (
     <li className="py-1.5">
       {link ? <a href={link.url} target="_blank" rel="noreferrer" className="font-semibold leading-snug hover:underline">{story.title}</a> : <span className="font-semibold">{story.title}</span>}
       <div className="mt-0.5 flex items-start gap-3 text-xs text-neutral-500">
         <span>{link?.sourceTitle} · {story.readMinutes} min</span>
+        {video && video !== link?.url && <a href={video} target="_blank" rel="noreferrer" className="hover:text-neutral-900 dark:hover:text-neutral-100">▶ Watch</a>}
         <FavoriteButton storyId={story.id} favorite={favorite} onChange={setFavorite} />
       </div>
     </li>
