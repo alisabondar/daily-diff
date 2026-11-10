@@ -1,9 +1,17 @@
 {
   "id": "security",
   "name": "Security",
-  "emoji": "🔐",
+  "emoji": "\ud83d\udd10",
   "defaultEnabled": false,
   "sources": [
+    {
+      "title": "Simon Willison: prompt injection",
+      "url": "https://simonwillison.net/tags/prompt-injection/",
+      "feedUrl": "https://simonwillison.net/tags/prompt-injection.atom",
+      "kind": "rss",
+      "type": "blog",
+      "defaultEnabled": false
+    },
     {
       "title": "Krebs on Security",
       "url": "https://krebsonsecurity.com",

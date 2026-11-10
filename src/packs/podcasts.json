@@ -1,9 +1,33 @@
 {
   "id": "podcasts",
   "name": "Podcasts",
-  "emoji": "🎧",
-  "defaultEnabled": false,
+  "emoji": "\ud83c\udfa7",
+  "defaultEnabled": true,
   "sources": [
+    {
+      "title": "Lenny's Podcast",
+      "url": "https://www.lennysnewsletter.com/podcast",
+      "feedUrl": "https://api.substack.com/feed/podcast/10845.rss",
+      "kind": "rss",
+      "type": "podcast",
+      "defaultEnabled": true
+    },
+    {
+      "title": "WSJ Tech News Briefing",
+      "url": "https://www.wsj.com/podcasts/tech-news-briefing",
+      "feedUrl": "https://video-api.shdsvc.dowjones.io/api/podcasts/the%20wall%20street%20journal%20tech%20talk/feed",
+      "kind": "rss",
+      "type": "podcast",
+      "defaultEnabled": true
+    },
+    {
+      "title": "Hard Fork",
+      "url": "https://www.nytimes.com/column/hard-fork",
+      "feedUrl": "https://feeds.simplecast.com/6HKOhNgS",
+      "kind": "rss",
+      "type": "podcast",
+      "defaultEnabled": false
+    },
     {
       "title": "Dwarkesh Podcast",
       "url": "https://www.dwarkesh.com",

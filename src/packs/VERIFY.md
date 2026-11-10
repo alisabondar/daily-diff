@@ -47,3 +47,13 @@ Channel IDs come from each `@handle` page's `externalId` (it matches the canonic
 | ThePrimeagen | UC8ENHE5xdFSwx71u3fDH5Xw | 2026-08-06 |
 
 2026-11-10: the three Reddit rows above were replaced by one combined feed, `r/LocalLLaMA+MachineLearning+programming/top/.rss?t=day`: 200, 25 entries (see docs/plan-issues.md).
+
+2026-11-10: the remaining FIND rows, verified live:
+| pack | source | feed | result |
+|---|---|---|---|
+| podcasts | Lenny's Podcast | `https://api.substack.com/feed/podcast/10845.rss` (found by discovery from lennysnewsletter.com/podcast) | 200, 369 items, latest 2026-11-08 |
+| podcasts | WSJ Tech News Briefing | `https://video-api.shdsvc.dowjones.io/api/podcasts/the%20wall%20street%20journal%20tech%20talk/feed` (Apple Podcasts directory) | 200, 600 items, latest 2026-11-10 |
+| podcasts | Hard Fork | `https://feeds.simplecast.com/6HKOhNgS` (Apple Podcasts directory) | 200, latest 2026-11-10 |
+| podcasts | Latent Space podcast | skipped: latent.space serves one feed, already in ai-news | — |
+| security | Simon Willison: prompt injection | `https://simonwillison.net/tags/prompt-injection.atom` (linked from the tag page) | 200, 30 entries |
+| security | Prompt Armor | still no RSS/Atom feed on promptarmor.com | not added |
