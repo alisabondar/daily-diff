@@ -5,3 +5,6 @@ dist/
 .DS_Store
 .env
 .fresh-home/
+.claude/
+.scratch/fmk/gen*.py
+.scratch/fmk/round*.html
