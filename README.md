@@ -2,6 +2,8 @@
 
 A daily AI & tech briefing that runs on your own machine. It reads your feeds, groups and ranks the stories with an LLM you choose, and serves a short front page at http://127.0.0.1:4242.
 
+![Daily Diff demo: the front page, Learn something new, archive search and sources](docs/demo.gif)
+
 ## Quick start
 
 You need [Node.js](https://nodejs.org) 20.12+, git, and an API key for one LLM provider: Anthropic, OpenAI, Google, OpenRouter or Amazon Bedrock. A local [Ollama](https://ollama.com) needs no key.
@@ -83,3 +85,4 @@ Keep `127.0.0.1:` in `-p`. Without it, Docker exposes the app to your network.
 
 - Design and architecture: [docs/daily-diff-architecture.md](docs/daily-diff-architecture.md)
 - Contributing and adding source packs: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Re-recording the demo GIF: see the header of [scripts/record-demo.mjs](scripts/record-demo.mjs)
