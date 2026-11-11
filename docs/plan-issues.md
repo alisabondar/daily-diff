@@ -5,6 +5,7 @@
 ### Change (2026-11-10): demo GIF for the README
 - **Requested by human:** a Playwright script that records the app and converts the recording for the README.
 - **Dependencies:** Playwright, `gifenc` and `jpeg-js` aren't in §B.2, so they are **not** project dependencies. `scripts/record-demo.mjs` loads them from a scratch folder named by `DEMO_DEPS` (setup in the script header). `package.json` is unchanged. There's no `ffmpeg` on the machine, so frames come from Chrome's screencast (CDP) and are encoded to GIF in JS with one shared palette.
+- **MP4 (2026-11-10):** when `ffmpeg` is on PATH (the human installed it with Homebrew), the script writes `docs/demo.mp4` instead: 1920×1200 (CSS zoom 2 in a 2× window, because headless screencast ignores `deviceScaleFactor`), lossless PNG frames, H.264 CRF 18 at 60 fps, about 2.7 MB. GitHub plays a video inline only when it's uploaded through the web editor, so the README keeps the GIF until the human uploads the MP4.
 - **Output:** `docs/demo.gif`: 800×500, Chrome screencast frames with real timing, capped at about 15 fps, 30 s, 8.3 MB (under GitHub's 10 MB image limit). Recorded from the human's real digest of 2026-11-10. It saves a story with a tag, scrolls to the end of Today, opens and reads through Learn, then shows Archive search, Favorites and Sources. The favorite it creates is removed afterwards, in a `finally` block. Settings is left out because it shows the profile and key-file path.
 
 ### Change (2026-11-10): every working pack source on; Prompt Armor replaced
