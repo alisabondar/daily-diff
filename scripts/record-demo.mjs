@@ -42,12 +42,12 @@ await cdp.send('Page.startScreencast', MP4 ? { format: 'png', maxWidth: W * SCAL
 const wait = (ms) => page.waitForTimeout(ms);
 // Eased scroll to `top` (a number, or 'end' for the bottom), measured inside the page so CSS zoom can't skew it.
 // With speed (px/s) instead of a fixed time, long pages take proportionally longer.
-const smoothScroll = async (top, ms, { speed } = {}) => {
-  await page.evaluate(([top, ms, speed]) => new Promise((done) => {
+const smoothScroll = async (top, ms, { speed, min = 1500, max = Infinity } = {}) => {
+  await page.evaluate(([top, ms, speed, min, max]) => new Promise((done) => {
     const el = document.scrollingElement;
     const to = top === 'end' ? el.scrollHeight - el.clientHeight : top;
     const from = el.scrollTop;
-    const dur = speed ? Math.max(1500, (Math.abs(to - from) / speed) * 1000) : ms;
+    const dur = speed ? Math.min(max, Math.max(min, (Math.abs(to - from) / speed) * 1000)) : ms;
     const start = performance.now();
     const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
     const step = (now) => {
@@ -56,10 +56,14 @@ const smoothScroll = async (top, ms, { speed } = {}) => {
       p < 1 ? requestAnimationFrame(step) : done();
     };
     requestAnimationFrame(step);
-  }), [top, ms, speed]);
+  }), [top, ms, speed, min, max]);
 };
 const nav = async (label) => {
-  await smoothScroll(0, 500);
+  // Back to the top at a reading-friendly pace: proportional to distance, 1.2-3 s.
+  if (await page.evaluate(() => document.scrollingElement.scrollTop > 0)) {
+    await smoothScroll(0, 0, { speed: 2500, min: 1200, max: 3000 });
+    await wait(400);
+  }
   await page.getByRole('link', { name: label, exact: true }).click();
   await wait(900);
 };
@@ -124,7 +128,7 @@ if (MP4) {
   });
   writeFileSync(join(dir, 'list.txt'), `${list.join('\n')}\nfile '${kept.length - 1}.png'\n`);
   const out = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', join(dir, 'list.txt'),
-    '-vf', 'fps=60,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '26', '-tune', 'stillimage', '-movflags', '+faststart', 'docs/demo.mp4'], { stdio: 'inherit' });
+    '-vf', 'fps=60,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-tune', 'stillimage', '-movflags', '+faststart', 'docs/demo.mp4'], { stdio: 'inherit' });
   rmSync(dir, { recursive: true, force: true });
   if (out.status !== 0) throw new Error('ffmpeg failed');
   const size = (await import('node:fs')).statSync('docs/demo.mp4').size;
