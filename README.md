@@ -2,7 +2,9 @@
 
 A daily AI & tech briefing that runs on your own machine. It reads your feeds, groups and ranks the stories with an LLM you choose, and serves a short front page at http://127.0.0.1:4242.
 
-![Daily Diff demo: saving a story, the front page, Learn something new, archive search, favorites and sources](docs/demo.gif)
+https://github.com/user-attachments/assets/d92db50f-ec4b-41bc-b768-570ce63376e5
+
+
 
 ## Quick start
 
