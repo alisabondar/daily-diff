@@ -40,17 +40,23 @@ cdp.on('Page.screencastFrame', ({ data, metadata, sessionId }) => {
 await cdp.send('Page.startScreencast', MP4 ? { format: 'png', maxWidth: W * SCALE, maxHeight: H * SCALE } : { format: 'jpeg', quality: 95, maxWidth: W, maxHeight: H });
 
 const wait = (ms) => page.waitForTimeout(ms);
-const smoothScroll = async (top, ms) => {
-  await page.evaluate(([top, ms]) => new Promise((done) => {
-    const from = scrollY, start = performance.now();
+// Eased scroll to `top` (a number, or 'end' for the bottom), measured inside the page so CSS zoom can't skew it.
+// With speed (px/s) instead of a fixed time, long pages take proportionally longer.
+const smoothScroll = async (top, ms, { speed } = {}) => {
+  await page.evaluate(([top, ms, speed]) => new Promise((done) => {
+    const el = document.scrollingElement;
+    const to = top === 'end' ? el.scrollHeight - el.clientHeight : top;
+    const from = el.scrollTop;
+    const dur = speed ? Math.max(1500, (Math.abs(to - from) / speed) * 1000) : ms;
+    const start = performance.now();
     const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
     const step = (now) => {
-      const p = Math.min(1, (now - start) / ms);
-      scrollTo(0, from + (top - from) * ease(p));
+      const p = Math.min(1, (now - start) / dur);
+      el.scrollTop = from + (to - from) * ease(p);
       p < 1 ? requestAnimationFrame(step) : done();
     };
     requestAnimationFrame(step);
-  }), [top, ms]);
+  }), [top, ms, speed]);
 };
 const nav = async (label) => {
   await smoothScroll(0, 500);
@@ -74,15 +80,14 @@ await wait(400);
 await page.locator('.absolute').getByRole('button', { name: 'Save', exact: true }).click();
 await wait(1000);
 // ...then all the way down the front page
-await smoothScroll(await page.evaluate(() => document.body.scrollHeight - innerHeight), 5000);
+await smoothScroll('end', 0, { speed: 700 });
 await wait(1000);
 // Open Learn something new and read through it
 const learn = page.locator('#sec-learn summary');
 if (await learn.count()) {
   await learn.click();
   await wait(800);
-  const [learnEnd, distance] = await page.evaluate(() => [document.body.scrollHeight - innerHeight, document.body.scrollHeight - innerHeight - scrollY]);
-  await smoothScroll(learnEnd, Math.min(9000, Math.max(3000, distance * 3)));
+  await smoothScroll('end', 0, { speed: 450 });
   await wait(1200);
 }
 // Archive: search past stories
@@ -92,9 +97,11 @@ await wait(2400);
 // Favorites: the story saved above, with its tag
 await nav('Favorites');
 await wait(2200);
-// Sources
+// Sources: scroll through every pack
 await nav('Sources');
-await wait(1800);
+await wait(800);
+await smoothScroll('end', 0, { speed: 700 });
+await wait(1500);
 } finally {
   // Leave the user's data as it was: remove the favorite the demo created.
   await removeDemoFavorite();
@@ -117,7 +124,7 @@ if (MP4) {
   });
   writeFileSync(join(dir, 'list.txt'), `${list.join('\n')}\nfile '${kept.length - 1}.png'\n`);
   const out = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', join(dir, 'list.txt'),
-    '-vf', 'fps=60,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-tune', 'stillimage', '-movflags', '+faststart', 'docs/demo.mp4'], { stdio: 'inherit' });
+    '-vf', 'fps=60,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '26', '-tune', 'stillimage', '-movflags', '+faststart', 'docs/demo.mp4'], { stdio: 'inherit' });
   rmSync(dir, { recursive: true, force: true });
   if (out.status !== 0) throw new Error('ffmpeg failed');
   const size = (await import('node:fs')).statSync('docs/demo.mp4').size;
