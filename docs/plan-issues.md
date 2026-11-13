@@ -2,7 +2,9 @@
 
 ## Open
 
-- **2026-11-13, step 29: rule 7 gains one outbound call (needs the human's approval).** Suggested sources are site URLs chosen by the LLM. Feed discovery may fetch one only after the user clicks Check, and only if it passes `isSafePublicUrl`. That's the same kind of fetch as discovery on a URL the user pastes, but the URL comes from the model. Recommendation: approve, because nothing is fetched without a click and the existing SSRF guard applies. **Status:** awaiting approval.
+- **2026-11-13: per-day digests for missed days (the human asked; this conflicts with the architecture).** Architecture §"Missed days" says missed days aren't backfilled, because RSS keeps limited history. Options: (a) **split the catch-up**: fetch once, score once, then write one small digest per missed day (its top 3–5 stories by score, in Archive under that date), with the catch-up keeping only the cross-day best. No extra fetching, a little more LLM cost for per-day summaries, and no story appears twice. (b) **full backfill**: run the whole pipeline per missed day. That costs N× the LLM spend, and the days are patchy for high-volume feeds. (c) keep a single catch-up with the step 28 label. Recommendation: (a). **Status:** the human chose (a) on 2026-11-13. It's step 29.
+
+- **2026-11-13, step 30: rule 7 gains one outbound call (needs the human's approval).** Suggested sources are site URLs chosen by the LLM. Feed discovery may fetch one only after the user clicks Check, and only if it passes `isSafePublicUrl`. That's the same kind of fetch as discovery on a URL the user pastes, but the URL comes from the model. Recommendation: approve, because nothing is fetched without a click and the existing SSRF guard applies. **Status:** approved by the human on 2026-11-13 ("implement everything we've discussed").
 
 ### Change (2026-11-10): demo GIF for the README
 - **Requested by human:** a Playwright script that records the app and converts the recording for the README.
@@ -154,3 +156,4 @@
 - Step 16: the plan's `components/Markdown.tsx` and `components/markdown.ts` differ only in case. On macOS's case-insensitive filesystem, Vite resolved `./Markdown` to `markdown.ts`. Imports of the two files now use explicit `.tsx`/`.ts` extensions, and `tsconfig.web.json` sets `allowImportingTsExtensions` (it's already `noEmit`).
 - Step 16: the routes validate bodies inside the handler, so `hc` doesn't type `json`. `api.ts` exports `jsonBody()`, which sends the body through `init`.
 - Step 16: `parseMarkdown` keeps a link as plain text unless its href is `http(s)`. This stops `javascript:` links in model output, in line with "escape all HTML".
+- Step 29: the step 11 test "catchup digests use a cap of 8" now starts its window on the digest's own day. Its window began in 1970, so the step 29 split moved 5 of its stories into a 1970 missed-day digest, and the helper counts Highlights across every digest. The cap assertion is unchanged.

@@ -69,7 +69,7 @@ export function Archive() {
                 <a href={`#/d/${d.date}`} className="group flex items-baseline justify-between gap-4 py-3">
                   <span className="group-hover:underline">{longDay(d.date)}</span>
                   <span className="whitespace-nowrap text-sm text-neutral-500">
-                    {d.kind === 'catchup' ? 'Catch-up' : 'Daily'}{d.isRaw ? ' · raw feed' : ''} · {d.highlightCount} {d.highlightCount === 1 ? 'highlight' : 'highlights'}
+                    {d.kind === 'catchup' ? 'Catch-up' : d.kind === 'missed' ? 'Missed day' : 'Daily'}{d.isRaw ? ' · raw feed' : ''} · {d.highlightCount} {d.highlightCount === 1 ? 'highlight' : 'highlights'}
                   </span>
                 </a>
               </li>

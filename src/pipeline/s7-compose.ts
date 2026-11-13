@@ -1,9 +1,10 @@
-import { and, eq, gte, isNotNull, ne } from 'drizzle-orm';
-import { digestEntries, digests, HIGHLIGHT_SECTION_FOR, learnItems, moreSectionFor } from '../db/schema.js';
+import { and, eq, gte, inArray, isNotNull, ne } from 'drizzle-orm';
+import { digestEntries, digests, HIGHLIGHT_SECTION_FOR, learnItems, moreSectionFor, stories } from '../db/schema.js';
 import { loadBooks } from '../packs/index.js';
 import { ComposeSchema, composePrompt, composeSystem, type ComposeOutput } from '../prompts/compose.js';
 import { DOCS_WARNING, QUICKSTART_SYSTEM, QuickstartSchema, quickstartPrompt } from '../prompts/quickstart.js';
 import { fetchWithTimeout, isSafePublicUrl, stripHtml, truncate } from '../sources/text.js';
+import { planSplit } from './split.js';
 import { callLlm, finishStage, loadStories, newUsage, type StageCtx, type StoryWithItems } from './context.js';
 
 const CATCHUP_CAP = 8;
@@ -108,7 +109,15 @@ export async function runS7(ctx: StageCtx): Promise<void> {
   const qsBody = docs.unavailable && !qs.bodyMd.startsWith(DOCS_WARNING) ? `${DOCS_WARNING}\n\n${qs.bodyMd}` : qs.bodyMd;
 
   const highlighted = new Set(highlights.map((h) => h.storyId));
-  const more = summarized.filter((s) => !highlighted.has(s.id)).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  // Step 29: a catch-up hands each missed day its own top stories.
+  const split = digest.kind === 'catchup'
+    ? planSplit(digest, summarized.map((st) => ({ id: st.id, score: st.score, publishedAt: Math.min(...st.items.map((i) => i.publishedAt)) })), {
+        highlighted,
+        taken: new Set(db.select({ date: digests.date }).from(digests).all().map((d) => d.date)),
+      })
+    : [];
+  const moved = new Set(split.flatMap((d) => d.storyIds));
+  const more = summarized.filter((s) => !highlighted.has(s.id) && !moved.has(s.id)).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const positions = new Map<string, number>();
   const nextPos = (key: string) => {
     const n = positions.get(key) ?? 0;
@@ -132,6 +141,33 @@ export async function runS7(ctx: StageCtx): Promise<void> {
       { digestId: digest.id, type: 'concept', conceptKey: c.conceptKey, title: c.title, bodyMd: c.bodyMd, quiz: c.quiz, relatedStoryId, sourceRef: c.sourceRef },
       { digestId: digest.id, type: 'quickstart', conceptKey: null, title: qs.title, bodyMd: qsBody, quiz: null, relatedStoryId: target.id, sourceRef: qs.sourceRef },
     ]).run();
+    for (const day of split) writeMissedDay(tx, digest, day, byId);
     finishStage(tx, digest.id, 7, usage);
   });
+}
+
+type Tx = Parameters<Parameters<StageCtx['db']['transaction']>[0]>[0];
+
+/** A missed day's digest: its stories move out of the catch-up, Highlights where the category has a section (step 29). */
+function writeMissedDay(tx: Tx, catchup: StageCtx['digest'], day: { date: string; storyIds: number[] }, byId: Map<number, StoryWithItems>) {
+  const midnight = new Date(`${day.date}T00:00:00`);
+  const next = new Date(midnight);
+  next.setDate(next.getDate() + 1);
+  const d = tx.insert(digests).values({
+    date: day.date, kind: 'missed', status: 'done', stage: 8,
+    windowStart: Math.max(midnight.getTime(), catchup.windowStart), windowEnd: next.getTime(), completedAt: Date.now(),
+  }).returning().get();
+  tx.update(stories).set({ digestId: d.id }).where(inArray(stories.id, day.storyIds)).run();
+  const positions = new Map<string, number>();
+  const rows = day.storyIds.map((id) => {
+    const category = byId.get(id)!.category;
+    const hs = category ? HIGHLIGHT_SECTION_FOR[category] : undefined;
+    const tab = hs ? ('highlights' as const) : ('more' as const);
+    const section = hs ?? moreSectionFor(category);
+    const key = `${tab}:${section}`;
+    const position = positions.get(key) ?? 0;
+    positions.set(key, position + 1);
+    return { digestId: d.id, storyId: id, tab, section, position };
+  });
+  tx.insert(digestEntries).values(rows).run();
 }

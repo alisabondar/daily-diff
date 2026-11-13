@@ -124,7 +124,7 @@ export function Today({ status, date }: { status: Status; date?: string }) {
           <header className="border-b border-neutral-400 pb-3 text-center">
             <h1 className="inline-flex items-center gap-3 text-4xl font-semibold tracking-tight"><img src="/favicon.svg" alt="" className="h-[0.8em] w-[0.8em]" />The Daily Diff</h1>
             <p className="mt-1 text-sm text-neutral-500">
-              {[catchup ?? (digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read'), day, `${all.length} ${all.length === 1 ? 'story' : 'stories'}${catchup ? '' : ` since ${since}`}`, ...(releases ? [`${releases} model ${releases === 1 ? 'release' : 'releases'}`] : []), `${minutes} min`].map((part, i) => (
+              {[catchup ?? (digest.meta.kind === 'missed' ? 'what you missed' : digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read'), day, `${all.length} ${all.length === 1 ? 'story' : 'stories'}${catchup || digest.meta.kind === 'missed' ? '' : ` since ${since}`}`, ...(releases ? [`${releases} model ${releases === 1 ? 'release' : 'releases'}`] : []), `${minutes} min`].map((part, i) => (
                 <span key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{part}</span></span>
               ))}
             </p>

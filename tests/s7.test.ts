@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { Config } from '../src/config.js';
 import { digestEntries, digests, learnItems, stories, storyItems, type Category } from '../src/db/schema.js';
 import { FakeLlm } from '../src/llm/fake.js';
@@ -92,7 +92,8 @@ test('an over-cap result is truncated, a third watch item dropped, a wrong-secti
 });
 
 test('catchup digests use a cap of 8', async () => {
-  const { db, story } = setup({ kind: 'catchup' });
+  // Window starts on the digest's own day: no missed days, so step 29 doesn't split.
+  const { db, story } = setup({ kind: 'catchup', windowStart: Date.parse('2026-10-29T12:00:00Z') });
   const tools = Array.from({ length: 18 }, (_, i) => story('tool', 9));
   const fake = new FakeLlm({
     compose: () => compose({ highlights: tools.map((t) => ({ storyId: t.id, section: 'tools' as const })) }, { storyId: tools[0]!.id, name: 'X', docsUrl: null }, tools[0]!.id),
@@ -258,4 +259,76 @@ test('re-running S7 replaces entries and learn items', async () => {
   await runS7(ctx(db, fake));
   expect(db.select().from(digestEntries).all()).toHaveLength(1);
   expect(db.select().from(learnItems).all()).toHaveLength(2);
+});
+
+describe('step 29: catch-up split', () => {
+  const tz = process.env.TZ;
+  beforeAll(() => { process.env.TZ = 'UTC'; });
+  afterAll(() => { if (tz === undefined) delete process.env.TZ; else process.env.TZ = tz; });
+  const day = (d: string) => Date.parse(`${d}T12:00:00Z`);
+  function catchup() {
+    const t = setup({ date: '2026-11-12', kind: 'catchup', windowStart: day('2026-11-09') - 4 * 3600_000, windowEnd: day('2026-11-12') });
+    const src = seedSource(t.db, { title: 'Src2' });
+    const at = (category: Category, score: number, published: string) => {
+      const row = t.db.insert(stories).values({ digestId: t.digest.id, title: `${category} ${score} ${published}`, category, score, summary: 'sum' }).returning().get();
+      t.db.insert(storyItems).values({ storyId: row.id, itemId: seedItem(t.db, src.id, { publishedAt: day(published) }).id }).run();
+      return row;
+    };
+    return { ...t, at };
+  }
+  const llmFor = (highlightId: number, relatedId: number) =>
+    new FakeLlm({ compose: () => compose({ highlights: [{ storyId: highlightId, section: 'tools' }] }, { storyId: highlightId, name: 'X', docsUrl: null }, relatedId), quickstart: quickstart() });
+
+  test('creates missed-day digests with the moved stories; the catch-up keeps highlights and leftovers', async () => {
+    const { db, digest, at } = catchup();
+    const hl = at('tool', 9, '2026-11-10');
+    const mon = at('headline', 7, '2026-11-09');
+    const tue = at('long-read', 6, '2026-11-10');
+    const today = at('headline', 5, '2026-11-12');
+    await runS7(ctx(db, llmFor(hl.id, hl.id), { digest }));
+    const missed = db.select().from(digests).where(eq(digests.kind, 'missed')).all().sort((a, b) => a.date.localeCompare(b.date));
+    expect(missed.map((d) => [d.date, d.status, d.stage])).toEqual([['2026-11-09', 'done', 8], ['2026-11-10', 'done', 8]]);
+    expect(missed[0]!.windowStart).toBe(digest.windowStart);
+    expect(missed[1]!.windowStart).toBe(Date.parse('2026-11-10T00:00:00Z'));
+    expect(missed[1]!.windowEnd).toBe(Date.parse('2026-11-11T00:00:00Z'));
+    const storyDigest = (id: number) => db.select().from(stories).where(eq(stories.id, id)).get()!.digestId;
+    expect(storyDigest(mon.id)).toBe(missed[0]!.id);
+    expect(storyDigest(tue.id)).toBe(missed[1]!.id);
+    expect(storyDigest(hl.id)).toBe(digest.id);
+    expect(storyDigest(today.id)).toBe(digest.id);
+    const entriesOf = (id: number) => db.select().from(digestEntries).where(eq(digestEntries.digestId, id)).all().map((e) => [e.storyId, e.tab, e.section]);
+    expect(entriesOf(missed[0]!.id)).toEqual([[mon.id, 'highlights', 'headlines']]);
+    expect(entriesOf(missed[1]!.id)).toEqual([[tue.id, 'more', 'long-reads']]);
+    expect(entriesOf(digest.id).map((e) => e[0]).sort()).toEqual([hl.id, today.id].sort());
+    expect(db.select().from(learnItems).all().every((l) => l.digestId === digest.id)).toBe(true);
+  });
+
+  test('a daily digest with the same stories creates no missed-day digests', async () => {
+    const daily = setup({ date: '2026-11-12', windowStart: Date.parse('2026-11-11T08:00:00Z') });
+    const src = seedSource(daily.db, { title: 'Src2' });
+    const d = daily.db.insert(stories).values({ digestId: daily.digest.id, title: 'old', category: 'headline', score: 7, summary: 'sum' }).returning().get();
+    daily.db.insert(storyItems).values({ storyId: d.id, itemId: seedItem(daily.db, src.id, { publishedAt: day('2026-11-10') }).id }).run();
+    const a = daily.story('tool', 9);
+    await runS7(ctx(daily.db, llmFor(a.id, a.id), { digest: daily.digest }));
+    expect(daily.db.select().from(digests).where(eq(digests.kind, 'missed')).all()).toEqual([]);
+    // the same shape as a catch-up does split
+    const c = catchup();
+    const hl = c.at('tool', 9, '2026-11-11');
+    c.at('headline', 7, '2026-11-10');
+    await runS7(ctx(c.db, llmFor(hl.id, hl.id), { digest: c.digest }));
+    expect(c.db.select().from(digests).where(eq(digests.kind, 'missed')).all()).toHaveLength(1);
+  });
+
+  test('an existing digest for a missed date is left alone; other days still split', async () => {
+    const { db, digest, at } = catchup();
+    const hl = at('tool', 9, '2026-11-11');
+    const mon = at('headline', 7, '2026-11-09');
+    const tue = at('headline', 6, '2026-11-10');
+    const existing = db.insert(digests).values({ date: '2026-11-09', kind: 'daily', status: 'done', windowStart: 0, windowEnd: 1 }).returning().get();
+    await runS7(ctx(db, llmFor(hl.id, hl.id), { digest }));
+    expect(db.select().from(digests).where(eq(digests.kind, 'missed')).all().map((d) => d.date)).toEqual(['2026-11-10']);
+    expect(db.select().from(stories).where(eq(stories.id, mon.id)).get()!.digestId).toBe(digest.id);
+    expect(db.select().from(stories).where(eq(stories.id, tue.id)).get()!.digestId).not.toBe(digest.id);
+    expect(db.select().from(digests).where(eq(digests.id, existing.id)).get()!.kind).toBe('daily');
+  });
 });

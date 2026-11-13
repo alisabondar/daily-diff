@@ -623,7 +623,18 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 **Spec:** on a digest with `kind = 'catchup'`, the header's first phrase reads "catch-up · {first day}–{last day} · {n} days" in place of "a calm morning read". The first day is the local date of `meta.windowStart`, the last day is the day before the digest date, and `n` counts the days from the first to the last, inclusive. The "since {weekday}" wording is dropped on catch-ups, since the range says it. Daily digests are unchanged. (This replaces an earlier step 28 that linked each missed day to its own page. Those pages only re-sorted the catch-up's own stories, so it was reverted.)
 **Verify:** manual in the browser on a catch-up and a daily digest, and baseline.
 
-#### Step 29 — Suggested sources from the profile [TDD]
+#### Step 29 — Split a catch-up into missed-day digests [TDD]
+**Files:** `src/db/schema.ts`, `src/pipeline/split.ts`, `src/pipeline/s7-compose.ts`, `src/web/pages/Today.tsx`, `src/web/pages/Archive.tsx`, `tests/split.test.ts`, `tests/s7.test.ts`.
+**Why:** a catch-up shows the best stories across the whole gap, and the rest sit in More. This step gives each missed day its own small digest in Archive, so you can still see what mattered on that day, and no story appears twice. Nothing extra is fetched and no extra model call is made.
+**Spec:**
+- `DigestKind` gains `'missed'` (§B.4). It's a text enum, so no migration is needed.
+- `planSplit(digest: { date, windowStart }, stories: { id, score, publishedAt }[], { highlighted: Set<number>, taken: Set<string>, perDay = 5 }) → { date, storyIds }[]`. Highlighted stories stay in the catch-up. Each other story's day is `localDate(publishedAt)`, clamped up to `localDate(windowStart)`. Stories whose day is on or after `digest.date`, or is a date in `taken` (a digest already exists for it), stay in the catch-up. Each day takes its top `perDay` stories by score (ties broken by lower id), and the rest stay in the catch-up's More. Days with no stories are omitted, and the result is in date order. A story's `publishedAt` is its earliest item's.
+- In `runS7`, when `digest.kind = 'catchup'`, inside the same transaction that writes the entries and finishes stage 7: for each planned day, insert a digest `{ date, kind:'missed', status:'done', stage:8, windowStart: max(local midnight of date, catch-up windowStart), windowEnd: next local midnight, completedAt: now }`. Move its stories there (`stories.digestId`), and write their entries: a story goes to Highlights if its category has a Highlights section, otherwise to More, with positions by score. Leave them out of the catch-up's More. Missed-day digests have no Learn items and no token totals. Because the split is in S7's transaction, a resumed build never splits twice.
+- **UI:** Today on a `missed` digest: the header's first phrase is "what you missed", and there's no Learn or quiz. Archive labels these digests "Missed day". Reading a missed-day digest never counts toward the streak, because only today's digest does.
+**Tests (write first):** `planSplit` puts stories on the right days; earlier dates clamp to the first day; the digest's own day and `taken` days stay in the catch-up; highlighted stories never move; the top `perDay` by score are picked, with ties by id; ordering. S7: a catch-up with stories over 3 days creates missed-day digests with the moved stories and their entries, the catch-up keeps its highlights and leftovers, and the missed-day digests have no Learn; a daily digest creates none; an existing digest for a missed date is left alone.
+**Verify:** baseline, plus a manual check in the browser: a catch-up's days appear in Archive as "Missed day", each one opens, and the catch-up no longer lists their stories.
+
+#### Step 30 — Suggested sources from the profile [TDD]
 **Files:** `src/llm/types.ts`, `src/sources/suggest.ts`, `src/prompts/suggest.ts`, the `POST /api/sources/suggest` route, `src/web/pages/Sources.tsx`, `tests/suggest.test.ts`, `tests/api.test.ts`, `tests/fixtures/llm/handlers.ts`.
 **Why:** the profile only ranks what the enabled sources publish. It can't surface an industry that no source covers. This step lets the model propose sources for that industry, and the user approves each one.
 **Spec:**
@@ -632,7 +643,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 - **Nothing is fetched at suggestion time.** The only network call is the LLM.
 - `POST /api/sources/suggest` takes no body and uses the saved profile. An empty profile returns 400 ("add a profile in Settings first"). No LLM configured returns 400. On an `LlmError` it returns `{ ok:false, code, message }` with the key redacted, like `/api/settings/test`.
 - **UI (Sources page):** a "Suggest sources for my profile" button, shown only when a profile exists and never run automatically, because each run costs tokens. Results appear as a list: title, host, `why`, and a **Check** button. Check runs the existing `POST /api/sources/discover` on `siteUrl` and then shows the same preview, type picker and Save as Add source. When no feed is found, the row says so and offers nothing else. Each row can be dismissed. Suggestions aren't stored; leaving the page clears them.
-- **Rule 7 change:** the allowed outbound calls gain "a site URL suggested in step 29, fetched by feed discovery only after the user clicks Check, and only if it passes `isSafePublicUrl`."
+- **Rule 7 change:** the allowed outbound calls gain "a site URL suggested in step 30, fetched by feed discovery only after the user clicks Check, and only if it passes `isSafePublicUrl`."
 **Tests (write first, with FakeLlm):** suggestions come back trimmed to 6; unsafe URLs (`http:`, `localhost`, a private IP) are dropped; a host already among the sources (with and without `www.`) is dropped; duplicate hosts collapse to one; the profile and existing source titles appear in the prompt; `suggestSources` makes no `fetchFn` call (a throwing fake `fetchFn` passed through the deps); API: the happy path, 400 on an empty profile, an `LlmError` returns `{ ok:false, code }` with no key in the body.
 **Verify:** baseline, plus a manual check: with a real key and a non-AI profile (for example "fintech infrastructure engineer"), suggest, check one, add it, and confirm it's fetched in the next build.
 
@@ -699,7 +710,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 
 ## Part E — Definition of done (v1)
 
-- Steps 0–29 are committed, with the baseline green and every manual check recorded in the step's commit message.
+- Steps 0–30 are committed, with the baseline green and every manual check recorded in the step's commit message.
 - `docs/acceptance.md` has no gaps.
 - The README's cost and build-time numbers are measured, not estimated.
 - `docs/plan-issues.md` lists every deviation and mechanical adaptation, and the human has approved each one.
