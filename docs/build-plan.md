@@ -618,9 +618,9 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 - **Stat bars:** in `ModelDetails`, stats whose value is a percentage (`/^\d+(\.\d+)?%$/`) render as labeled horizontal bars on a 0–100 scale, each linking its `sourceUrl`. Other stats stay in the table. (A comparison with the previous model is out of scope, because no data for it exists.)
 **Verify:** manual in the browser, and baseline.
 
-#### Step 28 — Label catch-up editions
+#### Step 28 — Catch-up notice
 **Files:** `src/web/pages/Today.tsx`.
-**Spec:** on a digest with `kind = 'catchup'`, the header's first phrase reads "catch-up · {first day}–{last day} · {n} days" in place of "a calm morning read". The first day is the local date of `meta.windowStart`, the last day is the day before the digest date, and `n` counts the days from the first to the last, inclusive. The "since {weekday}" wording is dropped on catch-ups, since the range says it. Daily digests are unchanged. (This replaces an earlier step 28 that linked each missed day to its own page. Those pages only re-sorted the catch-up's own stories, so it was reverted.)
+**Spec:** on a digest with `kind = 'catchup'`, one muted line under the header reads "Missed a few days? Catch up in Archive", with "Catch up in Archive" linking to `#/archive`. The header itself is unchanged. Daily digests are unchanged. (This replaces two earlier versions: links from each missed day to its own page, and a "catch-up · nov 3–8 · 6 days" header label. Once step 29 gave each missed day its own digest in Archive, both repeated what Archive already shows.)
 **Verify:** manual in the browser on a catch-up and a daily digest, and baseline.
 
 #### Step 29 — Split a catch-up into missed-day digests [TDD]
