@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { api, type Digest, type Status, type StoryT } from '../api';
+import { useEffect, useRef, useState } from 'react';
+import { api, postRead, type Digest, type ReadBody, type Status, type Streak, type StoryT } from '../api';
+import { FinishLine, streakText } from '../components/FinishLine';
 import { Banner } from '../components/Banner';
 import { FavoriteButton } from '../components/FavoriteButton';
 import { Actions, ModelDetails, videoLink } from '../components/StoryCard';
@@ -54,6 +55,15 @@ export function Today({ status, date }: { status: Status; date?: string }) {
   const [digest, setDigest] = useState<Digest | null>(null);
   const [missing, setMissing] = useState(false);
   const shown = date ?? (status.today?.status === 'done' ? status.today.date : status.latestDoneDate);
+  // Reading only counts toward the streak on today's digest (step 26).
+  const isToday = !date && !!shown && shown === status.today?.date;
+  const [streak, setStreak] = useState<Streak | null>(null);
+  const record = isToday ? (b: ReadBody) => { postRead(b).then(setStreak); } : null;
+  const end = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (!date) api.streak.$get().then(async (r) => setStreak(await r.json()));
+  }, [date]);
 
   useEffect(() => {
     setDigest(null);
@@ -74,6 +84,19 @@ export function Today({ status, date }: { status: Status; date?: string }) {
     ? TOPIC_ORDER.map((t) => ({ key: t, label: TOPIC_LABEL[t]!, color: topicColor(t), stories: rest.filter((s) => s.topic === t) }))
     : (digest?.more ?? []).map((g) => ({ key: g.section, label: MORE_LABEL[g.section] ?? g.section, color: topicColor('other'), stories: g.stories }));
   const all = [...top, ...rest];
+  const releases = all.filter((s) => s.category === 'model').length;
+  const since = digest ? new Date(digest.meta.windowStart).toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase() : '';
+
+  useEffect(() => {
+    const el = end.current;
+    if (!isToday || !el) return;
+    let sent = false;
+    const io = new IntersectionObserver(([e]) => {
+      if (e?.isIntersecting && !sent) { sent = true; postRead({ kind: 'finished' }).then(setStreak); io.disconnect(); }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [isToday, digest]);
   const minutes = all.reduce((a, s) => a + s.readMinutes, 0);
   const day = shown ? new Date(`${shown}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }).toLowerCase() : '';
 
@@ -88,10 +111,11 @@ export function Today({ status, date }: { status: Status; date?: string }) {
           <header className="border-b border-neutral-400 pb-3 text-center">
             <h1 className="text-4xl font-semibold tracking-tight">The Daily Diff</h1>
             <p className="mt-1 text-sm text-neutral-500">
-              {[digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read', day, `${all.length} ${all.length === 1 ? 'story' : 'stories'}`, `${minutes} min`].map((part, i) => (
+              {[digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read', day, `${all.length} ${all.length === 1 ? 'story' : 'stories'} since ${since}`, ...(releases ? [`${releases} model ${releases === 1 ? 'release' : 'releases'}`] : []), `${minutes} min`].map((part, i) => (
                 <span key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{part}</span></span>
               ))}
             </p>
+            {!date && streak && <p className="mt-1 text-xs text-neutral-500">{streakText(streak)}{streak.readToday ? ' · read today ✓' : ''}</p>}
           </header>
           {all.length === 0 && !digest.meta.isRaw && <p className="py-10 text-center text-neutral-500">Quiet day — nothing above your relevance threshold.</p>}
           {top.length > 0 && <div className="divide-y divide-neutral-200 dark:divide-neutral-800">{top.map((s, i) => <TopStory key={s.id} story={s} n={i + 1} />)}</div>}
@@ -109,7 +133,8 @@ export function Today({ status, date }: { status: Status; date?: string }) {
             </section>
           )}
           {digest.learn && <LearnSection learn={digest.learn} />}
-          {all.length > 0 && <p className="mt-10 text-center text-sm italic text-neutral-500">That’s all. Go make something.</p>}
+          {digest.learn?.concept.quiz?.length ? <FinishLine quiz={digest.learn.concept.quiz} concept={digest.learn.concept.title} record={record} streak={streak} /> : null}
+          {all.length > 0 && <p ref={end} className="mt-10 text-center text-sm italic text-neutral-500">That’s all. Go make something.</p>}
         </>
       )}
     </div>

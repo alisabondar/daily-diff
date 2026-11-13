@@ -1,31 +1,7 @@
-import { useState } from 'react';
 import type { Digest } from '../api';
 import { Markdown } from './Markdown.tsx';
 
 type Learn = NonNullable<Digest['learn']>;
-type Question = NonNullable<Learn['concept']['quiz']>[number];
-
-function Quiz({ q }: { q: Question }) {
-  const [picked, setPicked] = useState<number | null>(null);
-  return (
-    <div className="space-y-2">
-      <p className="font-medium">{q.q}</p>
-      <div className="flex flex-col gap-1">
-        {q.choices.map((c, i) => (
-          <button
-            key={i}
-            onClick={() => setPicked(i)}
-            disabled={picked !== null}
-            className={`rounded border px-3 py-1 text-left transition-colors ${picked === null ? 'border-neutral-300 hover:border-neutral-500 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800' : i === q.answerIndex ? 'border-green-600 bg-green-50 dark:bg-green-950/40' : i === picked ? 'border-red-600 bg-red-50 dark:bg-red-950/40' : 'border-neutral-300 opacity-60 dark:border-neutral-700'}`}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-      {picked !== null && <p className="text-sm">{picked === q.answerIndex ? '✓ Correct' : `Not quite. The answer is: ${q.choices[q.answerIndex]}`}</p>}
-    </div>
-  );
-}
 
 const Ref = ({ value }: { value: string }) => (
   <p className="text-xs text-neutral-500">
@@ -47,7 +23,7 @@ export function LearnSection({ learn }: { learn: Learn }) {
         <h3 className="text-lg font-semibold">{learn.concept.title}</h3>
         <Markdown src={learn.concept.bodyMd} />
         <Ref value={learn.concept.sourceRef} />
-        {learn.concept.quiz?.map((q, i) => <Quiz key={i} q={q} />)}
+        {learn.concept.quiz?.length ? <p className="text-sm"><a href="#sec-finish" onClick={(e) => { e.preventDefault(); document.getElementById('sec-finish')?.scrollIntoView({ behavior: 'smooth' }); }} className="underline">Test yourself in Close the diff ↓</a></p> : null}
       </div>
       <div className="space-y-4 rounded-xl bg-neutral-50 p-5 dark:bg-neutral-900">
         <h3 className="text-lg font-semibold">{learn.quickstart.title}</h3>
