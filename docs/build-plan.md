@@ -617,7 +617,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 **Spec:**
 - **Stat bars:** in `ModelDetails`, stats whose value is a percentage (`/^\d+(\.\d+)?%$/`) render as labeled horizontal bars on a 0–100 scale, each linking its `sourceUrl`. Other stats stay in the table. (A comparison with the previous model is out of scope, because no data for it exists.)
 - **Source mark:** a monogram (the source title's first letter in a topic-colored circle) next to the source name on top stories and story cards. No favicons, since fetching them would be an outbound call that rule 7 doesn't allow.
-- **Week heatmap:** at the top of Archive, a grid of topics × the last 7 done digests. Cell intensity is the story count. Clicking a column opens that day. It's built client-side from `GET /api/digests` and `GET /api/digests/:date`, with no new endpoint.
+- **Week heatmap:** at the top of Archive, a "Recent days" grid of topics × the last 7 done digests. Cell intensity is the story count. Clicking a column opens that day. It's built client-side from `GET /api/digests` and `GET /api/digests/:date`, with no new endpoint.
 **Verify:** manual in the browser, and baseline.
 
 ---

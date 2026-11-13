@@ -6,6 +6,7 @@ import { FavoriteButton } from '../components/FavoriteButton';
 import { Actions, ModelDetails, videoLink } from '../components/StoryCard';
 import { LearnSection } from '../components/LearnSection';
 import { ProgressStrip } from '../components/ProgressStrip';
+import { SourceMark } from '../components/SourceMark';
 import { TOPIC_LABEL, TOPIC_ORDER, topicColor } from '../topics';
 
 // "Calm" front page (from /fmk, design G): numbered top 3 with margin notes, then everything else by topic.
@@ -20,7 +21,7 @@ function TopStory({ story, n }: { story: StoryT; n: number }) {
         <div className="text-2xl font-bold leading-none sm:text-3xl" style={{ color }}>{n}</div>
         {story.topic !== 'other' && <div className="font-semibold sm:mt-1" style={{ color }}>{TOPIC_LABEL[story.topic] ?? 'Other'}</div>}
         <div>{story.readMinutes} min</div>
-        {link && <div className="truncate">{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</div>}
+        {link && <div className="truncate"><SourceMark title={link.sourceTitle} color={color} /> {link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</div>}
       </div>
       <div>
         <h2 className="text-xl font-semibold leading-snug">

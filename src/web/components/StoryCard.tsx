@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api, jsonBody, type StoryT } from '../api';
 import { TOPIC_LABEL, topicColor } from '../topics';
 import { FavoriteButton } from './FavoriteButton';
+import { SourceMark } from './SourceMark';
 
 const ext = { target: '_blank', rel: 'noreferrer' } as const;
 const quiet = 'hover:text-neutral-900 dark:hover:text-neutral-100';
@@ -31,16 +32,33 @@ export function Actions({ story, onFavoriteChange }: { story: StoryT; onFavorite
   );
 }
 
-/** Vendor stats and pros/cons for model stories. */
+const PERCENT = /^\d+(\.\d+)?%$/;
+
+/** Vendor stats (percentages as bars) and pros/cons for model stories. */
 export function ModelDetails({ story }: { story: StoryT }) {
   if (story.category !== 'model') return null;
+  const stats = story.stats ?? [];
+  const bars = stats.filter((s) => PERCENT.test(s.value));
+  const rows = stats.filter((s) => !PERCENT.test(s.value));
   return (
     <>
-      {story.stats && story.stats.length > 0 && (
+      {bars.length > 0 && (
+        <div className="mt-3 max-w-md space-y-1 text-sm">
+          <div className="text-xs text-neutral-500">Vendor-reported</div>
+          {bars.map((s, i) => (
+            <a key={i} href={s.sourceUrl} {...ext} className="group grid grid-cols-[minmax(6rem,10rem)_1fr_3.5rem] items-center gap-2">
+              <span className="truncate text-neutral-500">{s.label}</span>
+              <span className="h-2 rounded-full bg-neutral-200 dark:bg-neutral-800"><span className="block h-full rounded-full" style={{ width: `${Math.min(100, parseFloat(s.value))}%`, background: topicColor(story.topic) }} /></span>
+              <span className="text-right tabular-nums group-hover:underline">{s.value}</span>
+            </a>
+          ))}
+        </div>
+      )}
+      {rows.length > 0 && (
         <table className="mt-3 text-sm">
-          <caption className="pb-0.5 text-left text-xs text-neutral-500">Vendor-reported</caption>
+          {bars.length === 0 && <caption className="pb-0.5 text-left text-xs text-neutral-500">Vendor-reported</caption>}
           <tbody>
-            {story.stats.map((s, i) => (
+            {rows.map((s, i) => (
               <tr key={i}>
                 <td className="py-0.5 pr-6 text-neutral-500">{s.label}</td>
                 <td className="py-0.5 tabular-nums"><a href={s.sourceUrl} {...ext} className="hover:underline">{s.value}</a></td>
@@ -74,7 +92,7 @@ export function StoryCard({ story, date, onFavoriteChange }: { story: StoryT; da
       <div className="flex flex-wrap gap-x-2 text-xs text-neutral-500">
         {date && <><a href={`#/d/${date}`} className={quiet}>{dayLabel(date)}</a><span>·</span></>}
         {story.topic !== 'other' && <><span className="font-semibold" style={{ color }}>{TOPIC_LABEL[story.topic]}</span><span>·</span></>}
-        {link && <span>{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</span>}
+        {link && <span className="inline-flex items-center gap-1"><SourceMark title={link.sourceTitle} color={color} />{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</span>}
         <span>·</span>
         <span>{story.readMinutes} min</span>
       </div>
