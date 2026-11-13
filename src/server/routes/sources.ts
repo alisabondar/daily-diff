@@ -3,7 +3,10 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { SourceType, sources } from '../../db/schema.js';
 import { loadPacks, setPacks } from '../../packs/index.js';
+import { redactKey } from '../../config.js';
+import { LlmError } from '../../llm/types.js';
 import { discoverFeed } from '../../sources/discover.js';
+import { suggestSources } from '../../sources/suggest.js';
 import type { AppDeps } from '../deps.js';
 import { BadRequest, body, parse } from '../validate.js';
 
@@ -13,13 +16,27 @@ const PatchSource = z.object({ enabled: z.boolean().optional(), title: z.string(
 const PostPacks = z.object({ enabled: z.array(z.string()) });
 const Discover = z.object({ url: z.string().min(1) });
 
-export function sourceRoutes({ db, fetchFn }: AppDeps) {
+export function sourceRoutes(deps: AppDeps) {
+  const { db, fetchFn } = deps;
   return new Hono()
     .get('/sources', (c) => c.json(db.select().from(sources).orderBy(sources.pack, sources.title).all()))
     .post('/sources', async (c) => {
       const s = await body(c, NewSource);
       if (db.select().from(sources).where(eq(sources.feedUrl, s.feedUrl)).get()) throw new BadRequest('That feed is already added.');
       return c.json(db.insert(sources).values({ ...s, kind: 'rss', pack: null, enabled: true }).returning().get());
+    })
+    .post('/sources/suggest', async (c) => {
+      const config = deps.getConfig();
+      if (!config.profile.trim()) throw new BadRequest('Add a profile in Settings first.');
+      const llm = deps.llmFactory(config);
+      if (!llm) throw new BadRequest('Choose a provider and model, and add an API key in Settings.');
+      const existing = db.select({ title: sources.title, url: sources.url, feedUrl: sources.feedUrl }).from(sources).all();
+      try {
+        return c.json({ ok: true as const, suggestions: await suggestSources({ profile: config.profile, existing }, llm) });
+      } catch (err) {
+        const code = err instanceof LlmError ? err.code : 'llm';
+        return c.json({ ok: false as const, code, message: redactKey((err as Error).message ?? String(err), config) });
+      }
     })
     .post('/sources/discover', async (c) => {
       const { url } = await body(c, Discover);

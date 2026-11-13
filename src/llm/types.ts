@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-export type LlmTask = 'group' | 'score' | 'summarize' | 'compose' | 'quickstart' | 'ping';
+export type LlmTask = 'group' | 'score' | 'summarize' | 'compose' | 'quickstart' | 'ping' | 'suggest';
 export interface LlmUsage { inputTokens: number; outputTokens: number }
 export interface LlmJsonOpts<T> {
   tier: 'fast' | 'strong';

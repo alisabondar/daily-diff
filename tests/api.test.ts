@@ -314,3 +314,27 @@ test('reads: finished, then streak; quiz upsert overwrites; bad body 400', async
   expect((await req('POST', '/api/reads', { kind: 'quiz', correct: 4, total: 3 })).status).toBe(400);
   expect((await req('POST', '/api/reads', { kind: 'nope' })).status).toBe(400);
 });
+
+test('POST /api/sources/suggest: happy path with no fetch; 400 without a profile; LlmError is redacted', async () => {
+  const fake = new FakeLlm({ ...handlers, suggest: () => ({ suggestions: [{ title: 'Finextra', siteUrl: 'https://www.finextra.com', why: 'Fintech news' }, { title: 'Blog again', siteUrl: 'https://blog.dev', why: 'dup' }] }) });
+  const { req, deps } = setup(fake);
+  const before = (deps.fetchFn as any).calls.length;
+  expect((await req('POST', '/api/sources/suggest')).status).toBe(400);
+  saveConfig({ profile: 'Fintech infrastructure engineer' });
+  const ok = await req('POST', '/api/sources/suggest');
+  expect(ok.status).toBe(200);
+  expect(ok.json).toEqual({ ok: true, suggestions: [{ title: 'Finextra', siteUrl: 'https://www.finextra.com', why: 'Fintech news' }] });
+  expect((deps.fetchFn as any).calls.length).toBe(before);
+
+  const failing = setup(new FakeLlm({ suggest: () => new LlmError(`bad key ${KEY}`, 'auth', false) }));
+  saveConfig({ profile: 'x' });
+  const err = await failing.req('POST', '/api/sources/suggest');
+  expect(err.json).toMatchObject({ ok: false, code: 'auth' });
+  expect(err.text).not.toContain(KEY);
+});
+
+test('POST /api/sources/suggest without an LLM returns 400', async () => {
+  const { req } = setup(null);
+  saveConfig({ profile: 'Fintech infrastructure engineer' });
+  expect((await req('POST', '/api/sources/suggest')).status).toBe(400);
+});
