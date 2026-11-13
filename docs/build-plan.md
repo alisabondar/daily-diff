@@ -618,6 +618,16 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 - **Stat bars:** in `ModelDetails`, stats whose value is a percentage (`/^\d+(\.\d+)?%$/`) render as labeled horizontal bars on a 0–100 scale, each linking its `sourceUrl`. Other stats stay in the table. (A comparison with the previous model is out of scope, because no data for it exists.)
 **Verify:** manual in the browser, and baseline.
 
+#### Step 28 — "You missed" days on catch-up editions [TDD]
+**Files:** `src/missed.ts`, `src/server/routes/digests.ts`, `src/server/stories.ts`, `src/web/App.tsx`, `src/web/pages/Today.tsx`, `src/web/pages/MissedDay.tsx`, `tests/missed.test.ts`, `tests/api.test.ts`.
+**Spec:**
+- `missedDays(digest: { date, windowStart }, stories: { id, publishedAt }[]) → { date, storyIds }[]`. The missed days are the local dates from `localDate(windowStart)` up to the day before `digest.date`. Each story belongs to `localDate(publishedAt)`, clamped into that range: an earlier date goes to the first day, and a date on or after `digest.date` goes nowhere. Days with no stories are omitted. The result is in date order.
+- A story's `publishedAt` is the earliest `items.publishedAt` among its linked items. It's added to the story's API shape.
+- `GET /api/digests/:date` adds `missed`: `missedDays(...)` when `kind = 'catchup'`, otherwise `[]`. Only Highlights and More stories count.
+- **UI:** on a catch-up digest with `missed` non-empty, one muted line under the header reads "You missed", followed by a weekday link per missed day. A link opens `#/d/:date/missed/:day`, which lists that day's stories with `StoryCard` and offers a back link to the digest. Nothing changes on daily digests.
+**Tests (write first):** a 3-day catch-up groups stories into the right days; a story published before the window goes to the first day; a story on `digest.date` is excluded; empty days are omitted; the result is ordered; API: a catch-up digest returns `missed` with story ids, and a daily digest returns `[]`; stories include `publishedAt`.
+**Verify:** baseline, and a manual browser check on a seeded catch-up digest.
+
 ---
 
 ## Part D — Source pack contents (step 3)
@@ -681,7 +691,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 
 ## Part E — Definition of done (v1)
 
-- Steps 0–27 are committed, with the baseline green and every manual check recorded in the step's commit message.
+- Steps 0–28 are committed, with the baseline green and every manual check recorded in the step's commit message.
 - `docs/acceptance.md` has no gaps.
 - The README's cost and build-time numbers are measured, not estimated.
 - `docs/plan-issues.md` lists every deviation and mechanical adaptation, and the human has approved each one.

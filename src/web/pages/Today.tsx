@@ -115,6 +115,14 @@ export function Today({ status, date }: { status: Status; date?: string }) {
                 <span key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{part}</span></span>
               ))}
             </p>
+            {digest.missed.length > 0 && (
+              <p className="mt-1 text-xs text-neutral-500">
+                You missed{' '}
+                {digest.missed.map((m, i) => (
+                  <span key={m.date}>{i > 0 && ' · '}<a href={`#/d/${shown}/missed/${m.date}`} title={`${m.storyIds.length} ${m.storyIds.length === 1 ? 'story' : 'stories'}`} className="underline decoration-neutral-400 underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100">{new Date(`${m.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' })}</a></span>
+                ))}
+              </p>
+            )}
             {!date && streak && <p className="mt-1 text-xs text-neutral-500">{streakText(streak)}{streak.readToday ? ' · read today ✓' : ''}</p>}
           </header>
           {all.length === 0 && !digest.meta.isRaw && <p className="py-10 text-center text-neutral-500">Quiet day — nothing above your relevance threshold.</p>}

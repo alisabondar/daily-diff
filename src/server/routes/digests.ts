@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { digestEntries, digests, HIGHLIGHT_SECTIONS, learnItems, MORE_SECTIONS, sources, stories } from '../../db/schema.js';
 import { progress } from '../../pipeline/progress.js';
 import { startToday } from '../../pipeline/run.js';
+import { missedDays } from '../../missed.js';
 import { localDate } from '../../time.js';
 import type { AppDeps } from '../deps.js';
 import { serializeStories } from '../stories.js';
@@ -79,6 +80,7 @@ export function digestRoutes(deps: AppDeps) {
         highlights: group('highlights', HIGHLIGHT_SECTIONS),
         more: group('more', MORE_SECTIONS),
         learn: !d.isRaw && concept && quickstart ? { concept, quickstart } : null,
+        missed: d.kind === 'catchup' ? missedDays(d, [...serialized.values()].flatMap((s) => (s.publishedAt === null ? [] : [{ id: s.id, publishedAt: s.publishedAt }]))) : [],
       });
     })
     .get('/search', (c) => {

@@ -9,7 +9,7 @@ export function serializeStories(db: Db, rows: Story[]) {
   if (rows.length === 0) return [];
   const ids = rows.map((s) => s.id);
   const links = db
-    .select({ storyId: storyItems.storyId, url: items.url, sourceTitle: sources.title, discussionUrl: items.discussionUrl, mediaUrl: items.mediaUrl, content: items.content })
+    .select({ storyId: storyItems.storyId, url: items.url, sourceTitle: sources.title, discussionUrl: items.discussionUrl, mediaUrl: items.mediaUrl, content: items.content, publishedAt: items.publishedAt })
     .from(storyItems)
     .innerJoin(items, eq(items.id, storyItems.itemId))
     .innerJoin(sources, eq(sources.id, items.sourceId))
@@ -27,11 +27,15 @@ export function serializeStories(db: Db, rows: Story[]) {
     stats: s.stats,
     pros: s.pros,
     cons: s.cons,
-    links: links.filter((l) => l.storyId === s.id).map(({ storyId: _, content: __, ...l }) => l),
+    links: links.filter((l) => l.storyId === s.id).map(({ storyId: _, content: __, publishedAt: ___, ...l }) => l),
+    publishedAt: earliest(links.filter((l) => l.storyId === s.id).map((l) => l.publishedAt)),
     readMinutes: readMinutes(links.filter((l) => l.storyId === s.id).map((l) => l.content)),
     favorite: favIds.has(s.id) ? { tags: tags.filter((t) => t.storyId === s.id).map((t) => t.tag) } : null,
   }));
 }
+
+/** A story's publish time: its earliest linked item's (null with no items). */
+const earliest = (ts: number[]) => (ts.length ? Math.min(...ts) : null);
 
 const WPM = 230;
 /** Estimated minutes to read the longest linked item (feeds often carry only an excerpt, so this is a floor). */
