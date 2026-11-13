@@ -109,7 +109,7 @@ export function Today({ status, date }: { status: Status; date?: string }) {
       {digest && (
         <>
           <header className="border-b border-neutral-400 pb-3 text-center">
-            <h1 className="text-4xl font-semibold tracking-tight">The Daily Diff</h1>
+            <h1 className="inline-flex items-center gap-3 text-4xl font-semibold tracking-tight"><img src="/favicon.svg" alt="" className="h-[0.8em] w-[0.8em]" />The Daily Diff</h1>
             <p className="mt-1 text-sm text-neutral-500">
               {[digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read', day, `${all.length} ${all.length === 1 ? 'story' : 'stories'} since ${since}`, ...(releases ? [`${releases} model ${releases === 1 ? 'release' : 'releases'}`] : []), `${minutes} min`].map((part, i) => (
                 <span key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{part}</span></span>
