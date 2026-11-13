@@ -613,10 +613,9 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 **Verify:** manual in the browser, and baseline.
 
 #### Step 27 — Visuals
-**Files:** `src/web/components/StoryCard.tsx`, `src/web/components/WeekHeatmap.tsx`, `src/web/pages/Today.tsx`, `src/web/pages/Archive.tsx`.
+**Files:** `src/web/components/StoryCard.tsx`, `src/web/pages/Today.tsx`.
 **Spec:**
 - **Stat bars:** in `ModelDetails`, stats whose value is a percentage (`/^\d+(\.\d+)?%$/`) render as labeled horizontal bars on a 0–100 scale, each linking its `sourceUrl`. Other stats stay in the table. (A comparison with the previous model is out of scope, because no data for it exists.)
-- **Week heatmap:** at the top of Archive, a "Recent days" grid of topics × the last 7 done digests. Each cell shows the story count, shaded by intensity, under a one-line caption explaining the grid. Clicking a column opens that day. It's built client-side from `GET /api/digests` and `GET /api/digests/:date`, with no new endpoint.
 **Verify:** manual in the browser, and baseline.
 
 ---

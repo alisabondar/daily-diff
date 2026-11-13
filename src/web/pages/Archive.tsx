@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { InferResponseType } from 'hono/client';
 import { api } from '../api';
 import { StoryCard } from '../components/StoryCard';
-import { WeekHeatmap } from '../components/WeekHeatmap';
 
 type Day = InferResponseType<typeof api.digests.$get>[number];
 type Hit = InferResponseType<typeof api.search.$get, 200>[number];
@@ -64,7 +63,6 @@ export function Archive() {
         )
       ) : (
         <>
-          <WeekHeatmap />
           <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
             {days?.map((d) => (
               <li key={d.date}>
