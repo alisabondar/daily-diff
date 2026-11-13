@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { api, jsonBody, type StoryT } from '../api';
 import { TOPIC_LABEL, topicColor } from '../topics';
 import { FavoriteButton } from './FavoriteButton';
-import { SourceMark } from './SourceMark';
 
 const ext = { target: '_blank', rel: 'noreferrer' } as const;
 const quiet = 'hover:text-neutral-900 dark:hover:text-neutral-100';
@@ -92,7 +91,7 @@ export function StoryCard({ story, date, onFavoriteChange }: { story: StoryT; da
       <div className="flex flex-wrap gap-x-2 text-xs text-neutral-500">
         {date && <><a href={`#/d/${date}`} className={quiet}>{dayLabel(date)}</a><span>·</span></>}
         {story.topic !== 'other' && <><span className="font-semibold" style={{ color }}>{TOPIC_LABEL[story.topic]}</span><span>·</span></>}
-        {link && <span className="inline-flex items-center gap-1"><SourceMark title={link.sourceTitle} color={color} />{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</span>}
+        {link && <span>{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</span>}
         <span>·</span>
         <span>{story.readMinutes} min</span>
       </div>

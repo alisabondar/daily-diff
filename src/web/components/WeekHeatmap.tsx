@@ -28,6 +28,7 @@ export function WeekHeatmap() {
   return (
     <section aria-label="Recent days by topic">
       <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Recent days</h2>
+      <p className="mt-1 text-xs text-neutral-500">Stories per topic in your last {cols.length} {cols.length === 1 ? 'digest' : 'digests'}. Stronger color means more. Click a day to open it.</p>
       <table className="mt-2 w-full border-separate border-spacing-1 text-xs">
         <thead>
           <tr>
@@ -43,8 +44,9 @@ export function WeekHeatmap() {
                 const n = c.counts[t] ?? 0;
                 return (
                   <td key={c.date} className="p-0">
-                    <a href={`#/d/${c.date}`} title={`${TOPIC_LABEL[t]} · ${n} on ${c.date}`} className="block h-5 rounded-sm bg-neutral-200/60 dark:bg-neutral-800/60">
-                      {n > 0 && <span className="block h-full rounded-sm" style={{ background: topicColor(t), opacity: 0.25 + 0.75 * (n / max) }} />}
+                    <a href={`#/d/${c.date}`} title={`${TOPIC_LABEL[t]} · ${n} on ${c.date}`} className="relative block h-6 rounded-sm bg-neutral-200/60 dark:bg-neutral-800/60">
+                      {n > 0 && <span className="absolute inset-0 rounded-sm" style={{ background: topicColor(t), opacity: 0.25 + 0.75 * (n / max) }} />}
+                      {n > 0 && <span className="relative flex h-full items-center justify-center font-semibold tabular-nums text-neutral-900 dark:text-white">{n}</span>}
                     </a>
                   </td>
                 );
