@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { Config, effectiveConfig, loadConfig, saveConfig } from '../src/config.js';
-import { digestEntries, digests, feedback, reads, sources, stories, storyItems } from '../src/db/schema.js';
+import { digests, feedback, reads, sources, stories } from '../src/db/schema.js';
 import { FakeLlm } from '../src/llm/fake.js';
 import { LlmError } from '../src/llm/types.js';
 import { __resetLockForTests, ensureToday } from '../src/pipeline/run.js';
@@ -12,7 +12,7 @@ import { seedSources } from '../src/packs/index.js';
 import { createApp } from '../src/server/app.js';
 import type { AppDeps } from '../src/server/deps.js';
 import { bindHost, startup } from '../src/startup.js';
-import { fakeFetch, fixture, seedItem, seedSource, testDb } from './helpers.js';
+import { fakeFetch, fixture, seedSource, testDb } from './helpers.js';
 import { handlers } from './fixtures/llm/handlers.js';
 
 const T0 = Date.parse('2026-10-28T20:00:00Z');
@@ -111,9 +111,7 @@ test('GET /api/digests/:date returns sections, stories, links and learn; 400 / 4
   const order = ['models', 'tools', 'headlines', 'watch'];
   expect(json.highlights.map((h: any) => order.indexOf(h.section))).toEqual([...json.highlights.map((h: any) => order.indexOf(h.section))].sort());
   const story = json.highlights[0].stories[0];
-  expect(Object.keys(story).sort()).toEqual(['category', 'cons', 'favorite', 'id', 'links', 'pros', 'publishedAt', 'readMinutes', 'stats', 'summary', 'title', 'topic']);
-  expect(typeof story.publishedAt).toBe('number');
-  expect(json.missed).toEqual([]);
+  expect(Object.keys(story).sort()).toEqual(['category', 'cons', 'favorite', 'id', 'links', 'pros', 'readMinutes', 'stats', 'summary', 'title', 'topic']);
   expect(story.topic).toMatch(/^(ai|dev-tools|security|infra|industry|research|other)$/);
   expect(story.readMinutes).toBeGreaterThanOrEqual(1);
   expect(story.links[0]).toHaveProperty('sourceTitle');
@@ -315,21 +313,4 @@ test('reads: finished, then streak; quiz upsert overwrites; bad body 400', async
   expect(db.select().from(reads).all()).toEqual([{ date: '2026-10-28', finishedAt: T0, quizCorrect: 3, quizTotal: 3 }]);
   expect((await req('POST', '/api/reads', { kind: 'quiz', correct: 4, total: 3 })).status).toBe(400);
   expect((await req('POST', '/api/reads', { kind: 'nope' })).status).toBe(400);
-});
-
-test('a catch-up digest returns missed days with story ids', async () => {
-  const { req, db } = setup();
-  const day = (d: string) => Date.parse(`${d}T12:00:00Z`);
-  const d = db.insert(digests).values({ date: '2026-10-28', kind: 'catchup', status: 'done', windowStart: day('2026-10-25'), windowEnd: T0 }).returning().get();
-  const src = db.select().from(sources).get()!;
-  const ids: number[] = [];
-  for (const [i, pub] of [day('2026-10-25'), day('2026-10-27'), day('2026-10-27')].entries()) {
-    const item = seedItem(db, src.id, { publishedAt: pub });
-    const st = db.insert(stories).values({ digestId: d.id, title: `S${i}` }).returning().get();
-    db.insert(storyItems).values({ storyId: st.id, itemId: item.id }).run();
-    db.insert(digestEntries).values({ digestId: d.id, storyId: st.id, tab: 'more', section: 'other', position: i }).run();
-    ids.push(st.id);
-  }
-  const { json } = await req('GET', '/api/digests/2026-10-28');
-  expect(json.missed).toEqual([{ date: '2026-10-25', storyIds: [ids[0]] }, { date: '2026-10-27', storyIds: [ids[1], ids[2]] }]);
 });

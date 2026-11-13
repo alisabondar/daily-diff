@@ -5,7 +5,6 @@ import { Favorites } from './pages/Favorites';
 import { Onboarding } from './pages/Onboarding';
 import { Settings } from './pages/Settings';
 import { Sources } from './pages/Sources';
-import { MissedDay } from './pages/MissedDay';
 import { Today } from './pages/Today';
 
 function useHash() {
@@ -18,14 +17,12 @@ function useHash() {
   return hash.replace(/^#/, '') || '/';
 }
 
-type Route = { page: 'today' } | { page: 'digest'; date: string } | { page: 'missed'; date: string; day: string } | { page: 'archive' | 'favorites' | 'sources' | 'settings' | 'onboarding' };
+type Route = { page: 'today' } | { page: 'digest'; date: string } | { page: 'archive' | 'favorites' | 'sources' | 'settings' | 'onboarding' };
 
 function match(path: string): Route | null {
   if (path === '/') return { page: 'today' };
   const d = path.match(/^\/d\/(\d{4}-\d{2}-\d{2})$/);
   if (d) return { page: 'digest', date: d[1] };
-  const m = path.match(/^\/d\/(\d{4}-\d{2}-\d{2})\/missed\/(\d{4}-\d{2}-\d{2})$/);
-  if (m) return { page: 'missed', date: m[1]!, day: m[2]! };
   const p = path.slice(1);
   if (p === 'archive' || p === 'favorites' || p === 'sources' || p === 'settings' || p === 'onboarding') return { page: p };
   return null;
@@ -65,7 +62,7 @@ export function App() {
 
   const route = match(path);
   // An archived digest (#/d/:date) belongs to Archive.
-  const isCurrent = (href: string) => href === '#' + path || (href === '#/archive' && (route?.page === 'digest' || route?.page === 'missed'));
+  const isCurrent = (href: string) => href === '#' + path || (href === '#/archive' && route?.page === 'digest');
   useEffect(() => {
     if (status && !status.onboarded && route?.page !== 'onboarding') window.location.hash = '#/onboarding';
   }, [status, route?.page]);
@@ -86,8 +83,6 @@ export function App() {
           <Today status={status} />
         ) : route.page === 'digest' ? (
           <Today status={status} date={route.date} />
-        ) : route.page === 'missed' ? (
-          <MissedDay status={status} date={route.date} day={route.day} />
         ) : route.page === 'archive' ? (
           <Archive />
         ) : route.page === 'favorites' ? (
