@@ -591,6 +591,37 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 
 ---
 
+### Phase 7 — Daily habit (added 2026-11-12 at the human's request)
+
+#### Step 25 — Reading log and streaks [TDD]
+**Files:** `src/db/schema.ts`, `drizzle/0003_reads.sql`, `src/streak.ts`, `src/server/routes/reads.ts`, `src/server/app.ts`, `tests/streak.test.ts`, `tests/api.test.ts`.
+**Schema:** `reads  date text pk ('YYYY-MM-DD' local, the day the reading happened) · finishedAt int null · quizCorrect int null · quizTotal int null`.
+**Spec:**
+- `computeStreak(readDates: string[], today: string) → { current, best, readToday, freezeAvailable }`. A day counts when it has a `reads` row. One missed day per ISO week (Mon–Sun) is forgiven as a freeze: it keeps the streak alive but doesn't add to it. A second miss in the same week breaks the streak. Today not being read yet is not a miss. `freezeAvailable` is true when the current ISO week has no forgiven miss.
+- `POST /api/reads` with body `{ kind: 'finished' }` or `{ kind: 'quiz', correct, total }` (integers, `0 ≤ correct ≤ total ≤ 10`) upserts the row for `localDate(now())`. A quiz result overwrites the previous one for that day. Returns the streak.
+- `GET /api/streak` returns `computeStreak` over all `reads` dates and `localDate(now())`.
+**Tests (write first):** consecutive days count; today unread keeps yesterday's streak; one missed day in a week is forgiven and not counted; two misses in one week break it; misses in different weeks are each forgiven; `best` survives a break; `freezeAvailable` flips after a forgiven miss; API: `finished` then `GET /api/streak` gives `readToday: true, current: 1`; quiz upsert overwrites; bad body returns 400.
+**Verify:** baseline.
+
+#### Step 26 — Since-you-looked, streak chip, and the quiz as a finish line
+**Files:** `src/web/pages/Today.tsx`, `src/web/components/LearnSection.tsx`, `src/web/components/FinishLine.tsx`, `src/web/api.ts`.
+**Spec:**
+- The Today header adds "since {weekday of `meta.windowStart`}" and, when any exist, "{n} model release(s)" (stories with `category = 'model'`).
+- A streak chip under the header: "🔥 {current}-day streak" (with "· read today ✓" once read), or "Start a streak today" when `current = 0`.
+- Today's digest only (not archive views): when the end of the page scrolls into view, post `{ kind: 'finished' }` once.
+- The quiz moves out of Learn into a "Close the diff" card above the sign-off: one question at a time, instant feedback, then a score line ("2/3 · 🔥 5-day streak"). Finishing posts `{ kind: 'quiz', correct, total }` (today's digest only). Learn keeps the concept text and links to the card.
+**Verify:** manual in the browser, and baseline.
+
+#### Step 27 — Visuals
+**Files:** `src/web/components/StoryCard.tsx`, `src/web/components/SourceMark.tsx`, `src/web/components/WeekHeatmap.tsx`, `src/web/pages/Today.tsx`, `src/web/pages/Archive.tsx`.
+**Spec:**
+- **Stat bars:** in `ModelDetails`, stats whose value is a percentage (`/^\d+(\.\d+)?%$/`) render as labeled horizontal bars on a 0–100 scale, each linking its `sourceUrl`. Other stats stay in the table. (A comparison with the previous model is out of scope, because no data for it exists.)
+- **Source mark:** a monogram (the source title's first letter in a topic-colored circle) next to the source name on top stories and story cards. No favicons, since fetching them would be an outbound call that rule 7 doesn't allow.
+- **Week heatmap:** at the top of Archive, a grid of topics × the last 7 done digests. Cell intensity is the story count. Clicking a column opens that day. It's built client-side from `GET /api/digests` and `GET /api/digests/:date`, with no new endpoint.
+**Verify:** manual in the browser, and baseline.
+
+---
+
 ## Part D — Source pack contents (step 3)
 
 `FIND` means the agent must locate the official feed URL and verify it, or remove the source and log it. Every URL listed here is a **candidate** that `verify-packs` has to confirm.
@@ -652,7 +683,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 
 ## Part E — Definition of done (v1)
 
-- Steps 0–24 are committed, with the baseline green and every manual check recorded in the step's commit message.
+- Steps 0–27 are committed, with the baseline green and every manual check recorded in the step's commit message.
 - `docs/acceptance.md` has no gaps.
 - The README's cost and build-time numbers are measured, not estimated.
 - `docs/plan-issues.md` lists every deviation and mechanical adaptation, and the human has approved each one.

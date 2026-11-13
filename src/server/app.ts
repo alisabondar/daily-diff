@@ -6,6 +6,7 @@ import { redactKey } from '../config.js';
 import type { AppDeps } from './deps.js';
 import { digestRoutes } from './routes/digests.js';
 import { favoriteRoutes } from './routes/favorites.js';
+import { readRoutes } from './routes/reads.js';
 import { settingsRoutes } from './routes/settings.js';
 import { sourceRoutes } from './routes/sources.js';
 import { BadRequest } from './validate.js';
@@ -15,7 +16,8 @@ export function createApp(deps: AppDeps) {
     .route('/', digestRoutes(deps))
     .route('/', favoriteRoutes(deps))
     .route('/', sourceRoutes(deps))
-    .route('/', settingsRoutes(deps));
+    .route('/', settingsRoutes(deps))
+    .route('/', readRoutes(deps));
 
   const app = new Hono()
     .onError((err, c) => {

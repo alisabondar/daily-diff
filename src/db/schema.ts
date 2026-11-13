@@ -169,3 +169,11 @@ export function moreSectionFor(category: Category | null): MoreSection {
   if (category === 'video') return 'videos';
   return 'other';
 }
+
+/** Step 25: one row per local day the user finished the digest or the quiz. */
+export const reads = sqliteTable('reads', {
+  date: text('date').primaryKey(),
+  finishedAt: integer('finished_at'),
+  quizCorrect: integer('quiz_correct'),
+  quizTotal: integer('quiz_total'),
+});

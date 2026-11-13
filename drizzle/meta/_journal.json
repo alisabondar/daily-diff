@@ -22,6 +22,13 @@
       "when": 1793755763000,
       "tag": "0002_story_topic",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794549829147,
+      "tag": "0003_reads",
+      "breakpoints": true
     }
   ]
 }

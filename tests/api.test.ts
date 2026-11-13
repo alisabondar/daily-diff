@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { Config, effectiveConfig, loadConfig, saveConfig } from '../src/config.js';
-import { digests, feedback, sources, stories } from '../src/db/schema.js';
+import { digests, feedback, reads, sources, stories } from '../src/db/schema.js';
 import { FakeLlm } from '../src/llm/fake.js';
 import { LlmError } from '../src/llm/types.js';
 import { __resetLockForTests, ensureToday } from '../src/pipeline/run.js';
@@ -299,4 +299,18 @@ test('GET /api/settings reports env overrides, invalid LLM_* values and the key 
   expect(res.json.envOverrides).toEqual({ fields: ['fastModel', 'strongModel'], invalid: [{ name: 'LLM_PROVIDER', value: 'watsonx' }] });
   delete process.env.LLM_MODEL;
   delete process.env.LLM_PROVIDER;
+});
+
+test('reads: finished, then streak; quiz upsert overwrites; bad body 400', async () => {
+  const { req, db } = setup();
+  expect((await req('GET', '/api/streak')).json).toMatchObject({ current: 0, readToday: false });
+  const r = await req('POST', '/api/reads', { kind: 'finished' });
+  expect(r.status).toBe(200);
+  expect(r.json).toMatchObject({ current: 1, readToday: true });
+  expect((await req('GET', '/api/streak')).json).toMatchObject({ current: 1, readToday: true });
+  await req('POST', '/api/reads', { kind: 'quiz', correct: 1, total: 3 });
+  await req('POST', '/api/reads', { kind: 'quiz', correct: 3, total: 3 });
+  expect(db.select().from(reads).all()).toEqual([{ date: '2026-10-28', finishedAt: T0, quizCorrect: 3, quizTotal: 3 }]);
+  expect((await req('POST', '/api/reads', { kind: 'quiz', correct: 4, total: 3 })).status).toBe(400);
+  expect((await req('POST', '/api/reads', { kind: 'nope' })).status).toBe(400);
 });
