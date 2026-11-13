@@ -2,6 +2,8 @@
 
 ## Open
 
+- **2026-11-13, step 29: rule 7 gains one outbound call (needs the human's approval).** Suggested sources are site URLs chosen by the LLM. Feed discovery may fetch one only after the user clicks Check, and only if it passes `isSafePublicUrl`. That's the same kind of fetch as discovery on a URL the user pastes, but the URL comes from the model. Recommendation: approve, because nothing is fetched without a click and the existing SSRF guard applies. **Status:** awaiting approval.
+
 ### Change (2026-11-10): demo GIF for the README
 - **Requested by human:** a Playwright script that records the app and converts the recording for the README.
 - **Dependencies:** Playwright, `gifenc` and `jpeg-js` aren't in §B.2, so they are **not** project dependencies. `scripts/record-demo.mjs` loads them from a scratch folder named by `DEMO_DEPS` (setup in the script header). `package.json` is unchanged. There's no `ffmpeg` on the machine, so frames come from Chrome's screencast (CDP) and are encoded to GIF in JS with one shared palette.

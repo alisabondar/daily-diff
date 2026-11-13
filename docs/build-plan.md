@@ -618,6 +618,24 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 - **Stat bars:** in `ModelDetails`, stats whose value is a percentage (`/^\d+(\.\d+)?%$/`) render as labeled horizontal bars on a 0–100 scale, each linking its `sourceUrl`. Other stats stay in the table. (A comparison with the previous model is out of scope, because no data for it exists.)
 **Verify:** manual in the browser, and baseline.
 
+#### Step 28 — Label catch-up editions
+**Files:** `src/web/pages/Today.tsx`.
+**Spec:** on a digest with `kind = 'catchup'`, the header's first phrase reads "catch-up · {first day}–{last day} · {n} days" in place of "a calm morning read". The first day is the local date of `meta.windowStart`, the last day is the day before the digest date, and `n` counts the days from the first to the last, inclusive. The "since {weekday}" wording is dropped on catch-ups, since the range says it. Daily digests are unchanged. (This replaces an earlier step 28 that linked each missed day to its own page. Those pages only re-sorted the catch-up's own stories, so it was reverted.)
+**Verify:** manual in the browser on a catch-up and a daily digest, and baseline.
+
+#### Step 29 — Suggested sources from the profile [TDD]
+**Files:** `src/llm/types.ts`, `src/sources/suggest.ts`, `src/prompts/suggest.ts`, the `POST /api/sources/suggest` route, `src/web/pages/Sources.tsx`, `tests/suggest.test.ts`, `tests/api.test.ts`, `tests/fixtures/llm/handlers.ts`.
+**Why:** the profile only ranks what the enabled sources publish. It can't surface an industry that no source covers. This step lets the model propose sources for that industry, and the user approves each one.
+**Spec:**
+- Add `'suggest'` to the `task` union in §B.5.
+- `suggestSources({ profile, existing: {title, url, feedUrl}[] }, llm) → { title, siteUrl, why }[]`. It makes one `strong` call, which returns at most 8 suggestions, and keeps at most 6. Prompt rules: suggest well-known publications, blogs, newsletters or podcasts that cover the profile's industry and that publish RSS/Atom; give the site's home page, not a guessed feed URL; `why` is one sentence (at most 120 chars) tied to the profile; don't suggest anything already in `existing`. After the call, drop any `siteUrl` that fails `isSafePublicUrl`, any whose host matches an existing source's `url` or `feedUrl` host (ignoring `www.`), and duplicate hosts.
+- **Nothing is fetched at suggestion time.** The only network call is the LLM.
+- `POST /api/sources/suggest` takes no body and uses the saved profile. An empty profile returns 400 ("add a profile in Settings first"). No LLM configured returns 400. On an `LlmError` it returns `{ ok:false, code, message }` with the key redacted, like `/api/settings/test`.
+- **UI (Sources page):** a "Suggest sources for my profile" button, shown only when a profile exists and never run automatically, because each run costs tokens. Results appear as a list: title, host, `why`, and a **Check** button. Check runs the existing `POST /api/sources/discover` on `siteUrl` and then shows the same preview, type picker and Save as Add source. When no feed is found, the row says so and offers nothing else. Each row can be dismissed. Suggestions aren't stored; leaving the page clears them.
+- **Rule 7 change:** the allowed outbound calls gain "a site URL suggested in step 29, fetched by feed discovery only after the user clicks Check, and only if it passes `isSafePublicUrl`."
+**Tests (write first, with FakeLlm):** suggestions come back trimmed to 6; unsafe URLs (`http:`, `localhost`, a private IP) are dropped; a host already among the sources (with and without `www.`) is dropped; duplicate hosts collapse to one; the profile and existing source titles appear in the prompt; `suggestSources` makes no `fetchFn` call (a throwing fake `fetchFn` passed through the deps); API: the happy path, 400 on an empty profile, an `LlmError` returns `{ ok:false, code }` with no key in the body.
+**Verify:** baseline, plus a manual check: with a real key and a non-AI profile (for example "fintech infrastructure engineer"), suggest, check one, add it, and confirm it's fetched in the next build.
+
 ---
 
 ## Part D — Source pack contents (step 3)
@@ -681,7 +699,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 
 ## Part E — Definition of done (v1)
 
-- Steps 0–27 are committed, with the baseline green and every manual check recorded in the step's commit message.
+- Steps 0–29 are committed, with the baseline green and every manual check recorded in the step's commit message.
 - `docs/acceptance.md` has no gaps.
 - The README's cost and build-time numbers are measured, not estimated.
 - `docs/plan-issues.md` lists every deviation and mechanical adaptation, and the human has approved each one.

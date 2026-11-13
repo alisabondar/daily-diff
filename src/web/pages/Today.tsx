@@ -50,6 +50,18 @@ function MoreItem({ story }: { story: StoryT }) {
   );
 }
 
+const DAY_MS = 86_400_000;
+const shortDay = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toLowerCase();
+/** "catch-up · nov 3–8 · 6 days": from the window start's day to the day before the digest (step 28). */
+function catchupRange(windowStart: number, date: string): string {
+  const first = new Date(windowStart);
+  first.setHours(12, 0, 0, 0);
+  const last = new Date(new Date(`${date}T12:00:00`).getTime() - DAY_MS);
+  const n = Math.max(1, Math.round((last.getTime() - first.getTime()) / DAY_MS) + 1);
+  const end = first.getMonth() === last.getMonth() ? String(last.getDate()) : shortDay(last);
+  return n === 1 ? `catch-up · ${shortDay(first)}` : `catch-up · ${shortDay(first)}–${end} · ${n} days`;
+}
+
 // `date` set: an archived digest (#/d/:date). Unset: today, or the latest done digest while today builds.
 export function Today({ status, date }: { status: Status; date?: string }) {
   const [digest, setDigest] = useState<Digest | null>(null);
@@ -86,6 +98,7 @@ export function Today({ status, date }: { status: Status; date?: string }) {
   const all = [...top, ...rest];
   const releases = all.filter((s) => s.category === 'model').length;
   const since = digest ? new Date(digest.meta.windowStart).toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase() : '';
+  const catchup = digest?.meta.kind === 'catchup' ? catchupRange(digest.meta.windowStart, digest.meta.date) : null;
 
   useEffect(() => {
     const el = end.current;
@@ -111,7 +124,7 @@ export function Today({ status, date }: { status: Status; date?: string }) {
           <header className="border-b border-neutral-400 pb-3 text-center">
             <h1 className="inline-flex items-center gap-3 text-4xl font-semibold tracking-tight"><img src="/favicon.svg" alt="" className="h-[0.8em] w-[0.8em]" />The Daily Diff</h1>
             <p className="mt-1 text-sm text-neutral-500">
-              {[digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read', day, `${all.length} ${all.length === 1 ? 'story' : 'stories'} since ${since}`, ...(releases ? [`${releases} model ${releases === 1 ? 'release' : 'releases'}`] : []), `${minutes} min`].map((part, i) => (
+              {[catchup ?? (digest.meta.isRaw ? 'today’s raw feed' : 'a calm morning read'), day, `${all.length} ${all.length === 1 ? 'story' : 'stories'}${catchup ? '' : ` since ${since}`}`, ...(releases ? [`${releases} model ${releases === 1 ? 'release' : 'releases'}`] : []), `${minutes} min`].map((part, i) => (
                 <span key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{part}</span></span>
               ))}
             </p>
