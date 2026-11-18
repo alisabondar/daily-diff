@@ -730,7 +730,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
   - `favorites(user_id, story_key, created_at, pk(user_id, story_key))`
   - `favorite_tags(user_id, story_key, tag)`
   - `feedback(user_id, story_key, kind, created_at)`
-  - `streaks(user_id pk, current int, best int, last_date text)`
+  - `reads(user_id, date, finished_at, quiz_correct, quiz_total, pk(user_id, date))` *(changed in step 36; the streak is computed client-side by `computeStreak`)*
   - The `user_id` foreign keys all cascade on delete.
 - **Row-level security:**
   - Scrub and catalog tables: `select` for `anon` and `authenticated`. There's no write policy; the service role bypasses RLS.

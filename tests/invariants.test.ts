@@ -29,10 +29,18 @@ test('no outbound host outside the rule-7 list is hard-coded (no telemetry)', ()
   expect([...hosts].filter((h) => !ALLOWED_HOSTS.has(h))).toEqual([]);
 });
 
+// Phase 8 amendment to rule 7: the bundle may read exactly three public build-time values, in one file.
+const PUBLIC_ENV_FILE = join('src', 'web', 'data', 'public-env.ts');
+const PUBLIC_ENV_NAMES = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'VITE_GITHUB_REPO'];
+
 test('the web bundle never reads env vars or imports server config (keys stay server-side)', () => {
   for (const f of files(join('src', 'web'))) {
     const src = code(f);
-    expect(src, f).not.toMatch(/process\.env|import\.meta\.env/);
+    expect(src, f).not.toMatch(/process\.env/);
+    if (f !== PUBLIC_ENV_FILE && !f.endsWith('.d.ts')) expect(src, f).not.toMatch(/import\.meta\.env/);
     expect(src, f).not.toMatch(/from ['"](\.\.\/)+(config|paths|llm)/);
+    expect(src, f).not.toMatch(/service_?role|sb_secret_|SUPABASE_SECRET/i);
   }
+  const names = [...code(PUBLIC_ENV_FILE).matchAll(/import\.meta\.env\.(\w+)/g)].map((m) => m[1]);
+  expect(names.sort()).toEqual([...PUBLIC_ENV_NAMES].sort());
 });

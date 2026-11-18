@@ -1,37 +1,14 @@
 import { createHash } from 'node:crypto';
 import { asc, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { digests, learnItems, type Category, type LearnType, type QuizQuestion, type Stat, type Topic } from '../db/schema.js';
+import { digests, learnItems } from '../db/schema.js';
+import type { PublishedScrub, PublishedStory } from '../shared/published.js';
 import { loadStories, type StoryItem } from '../pipeline/context.js';
 import { readMinutes } from '../server/stories.js';
 import { canonicalUrl } from '../sources/normalize.js';
 import { isRedditFeed } from '../sources/rss.js';
 
-/** One outbound link of a published story. */
-export interface PublishedLink { url: string; sourceKey: string; sourceTitle: string; discussionUrl: string | null; mediaUrl: string | null }
-
-/** The only story fields that ever leave the scrub (Phase 8 published field list). */
-export interface PublishedStory {
-  key: string;
-  date: string;
-  title: string;
-  links: PublishedLink[];
-  sourceKeys: string[];
-  pack: string | null;
-  category: Category | null;
-  topic: Topic;
-  score: number;
-  summary: string | null;
-  stats: Stat[] | null;
-  pros: string[] | null;
-  cons: string[] | null;
-  readMinutes: number;
-  publishedAt: number;
-}
-
-export interface PublishedLearn { position: number; type: LearnType; conceptKey: string | null; title: string; bodyMd: string; quiz: QuizQuestion[] | null; relatedStoryKey: string | null; sourceRef: string }
-
-export interface PublishedScrub { date: string; windowStart: number; windowEnd: number; stories: PublishedStory[]; learn: PublishedLearn[] }
+export type { PublishedLearn, PublishedLink, PublishedScrub, PublishedStory } from '../shared/published.js';
 
 /** Stable story id across runs: the first 16 hex chars of sha256(canonicalUrl(url)). */
 export function storyKey(url: string): string {

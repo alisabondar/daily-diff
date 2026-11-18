@@ -26,25 +26,31 @@ create table public.favorite_tags (
   primary key (user_id, story_key, tag)
 );
 
+-- topic and source_key are copied from the story so the down-rank works on later days without reloading it.
 create table public.feedback (
   user_id uuid not null references auth.users (id) on delete cascade,
   story_key text not null,
   kind text not null check (kind = 'less_like_this'),
+  topic text not null,
+  source_key text,
   created_at timestamptz not null default now(),
   primary key (user_id, story_key, kind)
 );
 
-create table public.streaks (
-  user_id uuid primary key references auth.users (id) on delete cascade,
-  current int not null default 0,
-  best int not null default 0,
-  last_date text
+-- One row per day the user finished the digest or the quiz; the streak is computed from these (src/streak.ts).
+create table public.reads (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  date text not null,
+  finished_at bigint,
+  quiz_correct int,
+  quiz_total int,
+  primary key (user_id, date)
 );
 
 do $$
 declare t text;
 begin
-  foreach t in array array['user_settings', 'favorites', 'favorite_tags', 'feedback', 'streaks'] loop
+  foreach t in array array['user_settings', 'favorites', 'favorite_tags', 'feedback', 'reads'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('create policy "own rows" on public.%I for all to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()))', t);
   end loop;

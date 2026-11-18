@@ -2,17 +2,10 @@ import { sql } from 'drizzle-orm';
 import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { z } from 'zod';
 
-// §B.4 shared enums
-export const SOURCE_TYPES = ['news', 'podcast', 'video', 'blog', 'community'] as const;
-export const SOURCE_KINDS = ['rss', 'hn'] as const;
-export const CATEGORIES = ['model', 'tool', 'headline', 'video', 'long-read', 'podcast'] as const;
-export const HIGHLIGHT_SECTIONS = ['models', 'tools', 'headlines', 'watch'] as const;
-export const MORE_SECTIONS = ['long-reads', 'podcasts', 'videos', 'other'] as const;
-export const DIGEST_KINDS = ['daily', 'catchup', 'missed'] as const;
-export const DIGEST_STATUSES = ['running', 'done', 'failed'] as const;
-export const LEARN_TYPES = ['concept', 'quickstart'] as const;
-export const ERROR_CODES = ['auth', 'llm', 'unknown'] as const;
-export const TOPICS = ['ai', 'dev-tools', 'security', 'infra', 'industry', 'research', 'other'] as const;
+// §B.4 shared enums live in src/shared/enums.ts so the browser can import them without Drizzle.
+import { CATEGORIES, DIGEST_KINDS, DIGEST_STATUSES, ERROR_CODES, HIGHLIGHT_SECTIONS, LEARN_TYPES, MORE_SECTIONS, SOURCE_KINDS, SOURCE_TYPES, TOPICS } from '../shared/enums.js';
+export * from '../shared/enums.js';
+import type { QuizQuestion, Stat } from '../shared/enums.js';
 
 export const SourceType = z.enum(SOURCE_TYPES);
 export const SourceKind = z.enum(SOURCE_KINDS);
@@ -36,8 +29,7 @@ export type LearnType = z.infer<typeof LearnType>;
 export type ErrorCode = z.infer<typeof ErrorCode>;
 export type Topic = z.infer<typeof Topic>;
 
-export interface Stat { label: string; value: string; sourceUrl: string }
-export interface QuizQuestion { q: string; choices: string[]; answerIndex: number }
+
 
 const now = () => Date.now();
 
@@ -158,17 +150,6 @@ export const feedback = sqliteTable('feedback', {
   kind: text('kind', { enum: ['less_like_this'] }).notNull(),
   createdAt: integer('created_at').notNull().$defaultFn(now),
 });
-
-// §B.4 category → section mapping
-export const HIGHLIGHT_SECTION_FOR: Partial<Record<Category, HighlightSection>> = {
-  model: 'models', tool: 'tools', headline: 'headlines', video: 'watch',
-};
-export function moreSectionFor(category: Category | null): MoreSection {
-  if (category === 'long-read') return 'long-reads';
-  if (category === 'podcast') return 'podcasts';
-  if (category === 'video') return 'videos';
-  return 'other';
-}
 
 /** Step 25: one row per local day the user finished the digest or the quiz. */
 export const reads = sqliteTable('reads', {
