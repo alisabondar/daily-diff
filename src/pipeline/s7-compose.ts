@@ -85,7 +85,7 @@ export async function runS7(ctx: StageCtx): Promise<void> {
     books: loadBooks(),
   };
   const callA = (forbiddenKeys?: string[]) =>
-    callLlm(ctx, { tier: 'strong', task: 'compose', system: composeSystem(config.profile, cap), prompt: composePrompt({ ...input, forbiddenKeys }), schema: ComposeSchema }, usage);
+    callLlm(ctx, { tier: 'strong', task: 'compose', system: composeSystem(ctx.scrub?.profile ?? config.profile, cap), prompt: composePrompt({ ...input, forbiddenKeys }), schema: ComposeSchema }, usage);
 
   let out = await callA();
   if (recent.includes(out.concept.conceptKey)) out = await callA(recent);

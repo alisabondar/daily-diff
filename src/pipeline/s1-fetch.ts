@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, isNotNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { digests, sources } from '../db/schema.js';
 import { fetchHn } from '../sources/hn.js';
@@ -6,10 +6,11 @@ import { fetchRss, isRedditFeed } from '../sources/rss.js';
 import { fetchYoutubeApi, youtubeChannelId } from '../sources/youtube-api.js';
 import type { RawItem } from '../sources/types.js';
 import { mapLimit } from './concurrency.js';
+import type { ScrubOpts } from './scrub.js';
 
 export type Digest = typeof digests.$inferSelect;
 /** youtubeApiKey: when set, YouTube channel feeds go through the Data API instead of RSS. */
-export interface IngestDeps { fetchFn?: typeof fetch; now: () => Date; sleep?: (ms: number) => Promise<void>; youtubeApiKey?: string }
+export interface IngestDeps { fetchFn?: typeof fetch; now: () => Date; sleep?: (ms: number) => Promise<void>; youtubeApiKey?: string; scrub?: ScrubOpts | null }
 
 // Reddit rate-limits parallel feed requests: fetch its feeds one at a time, and retry a 429 once.
 // YouTube's feed server intermittently answers 404/5xx for valid channels: fetch one at a time, and retry twice.
@@ -19,10 +20,13 @@ const YOUTUBE: Lane = { gapMs: 1000, retryMs: 3000, retries: 2, retryOn: /HTTP (
 const isYoutubeFeed = (feedUrl: string) => /^https:\/\/www\.youtube\.com\/feeds\/videos\.xml\?/.test(feedUrl);
 const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** Fetches every enabled source (concurrency 8; Reddit and YouTube feeds sequentially, with retries), recording per-source health and failures on the digest. */
-export async function runS1(db: Db, digest: Digest, { fetchFn, now, sleep = realSleep, youtubeApiKey }: IngestDeps): Promise<RawItem[]> {
+/** Fetches every enabled source (or, in scrub mode, every pack source) (concurrency 8; Reddit and YouTube feeds sequentially, with retries), recording per-source health and failures on the digest. */
+export async function runS1(db: Db, digest: Digest, { fetchFn, now, sleep = realSleep, youtubeApiKey, scrub }: IngestDeps): Promise<RawItem[]> {
   db.update(digests).set({ failedSourceIds: [] }).where(eq(digests.id, digest.id)).run();
-  const enabled = db.select().from(sources).where(eq(sources.enabled, true)).all();
+  // Scrub mode: every pack source regardless of `enabled`; Reddit only when the fork opts in.
+  const enabled = scrub
+    ? db.select().from(sources).where(isNotNull(sources.pack)).all().filter((s) => scrub.includeReddit || s.kind !== 'rss' || !isRedditFeed(s.feedUrl))
+    : db.select().from(sources).where(eq(sources.enabled, true)).all();
   const failed: number[] = [];
   type Src = (typeof enabled)[number];
   const viaApi = (s: Src) => !!youtubeApiKey && s.kind === 'rss' && youtubeChannelId(s.feedUrl) !== null;

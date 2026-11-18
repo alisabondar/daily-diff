@@ -1,3 +1,4 @@
+import { selectForSummary } from './scrub.js';
 import { eq } from 'drizzle-orm';
 import { stories, type Stat } from '../db/schema.js';
 import { SummarySchema, summarizePrompt, summarizeSystem, type SummaryOutput } from '../prompts/summarize.js';
@@ -24,10 +25,16 @@ export function guardSummary(story: StoryWithItems, out: SummaryOutput): { summa
   };
 }
 
+export const SCRUB_PER_GROUP = 6;
+export const SCRUB_SUMMARY_CAP = 60;
+
 /** S6: one fast-tier summary per story at or above the relevance threshold (concurrency 5). */
 export async function runS6(ctx: StageCtx): Promise<void> {
   const { db, digest, config } = ctx;
-  const targets = loadStories(db, digest.id).filter((s) => (s.score ?? 0) >= config.relevanceThreshold);
+  const all = loadStories(db, digest.id);
+  // Scrub mode summarizes a spread across categories and topics, so any user's filter finds summaries.
+  const chosen = ctx.scrub ? new Set(selectForSummary(all, { threshold: config.relevanceThreshold, perGroup: SCRUB_PER_GROUP, cap: SCRUB_SUMMARY_CAP })) : null;
+  const targets = all.filter((s) => (chosen ? chosen.has(s.id) : (s.score ?? 0) >= config.relevanceThreshold));
   const usage = newUsage();
   const results = await mapLimit(targets, 5, async (story) => {
     const out = await callLlm(ctx, {

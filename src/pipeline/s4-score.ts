@@ -19,7 +19,7 @@ export async function runS4(ctx: StageCtx): Promise<void> {
   const results = new Map<number, { score: number; category: Category; topic: Topic }>();
   for (let i = 0; i < all.length; i += SCORE_BATCH) {
     const batch = all.slice(i, i + SCORE_BATCH);
-    const out = await callLlm(ctx, { tier: 'fast', task: 'score', system: scoreSystem(config.profile), prompt: scorePrompt(batch), schema: ScoreSchema }, usage);
+    const out = await callLlm(ctx, { tier: 'fast', task: 'score', system: scoreSystem(ctx.scrub?.profile ?? config.profile), prompt: scorePrompt(batch), schema: ScoreSchema }, usage);
     for (const s of out.scores) results.set(s.storyId, { score: clamp(s.score), category: s.category, topic: s.topic ?? 'other' });
   }
   db.transaction((tx) => {

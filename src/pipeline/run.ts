@@ -15,6 +15,7 @@ import { runS5 } from './s5-enrich.js';
 import { runS6 } from './s6-summarize.js';
 import { runS7 } from './s7-compose.js';
 import { runS8 } from './s8-save.js';
+import type { ScrubOpts } from './scrub.js';
 
 export interface EnsureDeps {
   db: Db;
@@ -23,6 +24,8 @@ export interface EnsureDeps {
   fetchFn?: typeof fetch;
   now: () => Date;
   retryDelaysMs?: number[];
+  /** Phase 8: run as the shared scrub. */
+  scrub?: ScrubOpts | null;
 }
 export interface EnsureResult { started: boolean; digestDate: string | null }
 
@@ -86,7 +89,7 @@ async function build(deps: EnsureDeps, config: Config, today: string, existing: 
   if (digest.stage < 2) {
     try {
       progress.set(1, 'Fetching sources…');
-      const raw = await runS1(db, digest, { fetchFn: deps.fetchFn, now, youtubeApiKey: envValue('YOUTUBE_API_KEY')?.value });
+      const raw = await runS1(db, digest, { fetchFn: deps.fetchFn, now, youtubeApiKey: envValue('YOUTUBE_API_KEY')?.value, scrub: deps.scrub });
       progress.set(2, `Storing ${raw.length} items…`);
       runS2(db, load(db, digest.id), raw, now);
     } catch (err) {
@@ -109,7 +112,7 @@ async function build(deps: EnsureDeps, config: Config, today: string, existing: 
       digest = load(db, digest.id);
       if (digest.stage >= s.stage) continue;
       progress.set(s.stage, typeof s.message === 'string' ? s.message : s.message(db, digest));
-      await s.run({ db, digest, llm, config, fetchFn: deps.fetchFn, retryDelaysMs: deps.retryDelaysMs });
+      await s.run({ db, digest, llm, config, fetchFn: deps.fetchFn, retryDelaysMs: deps.retryDelaysMs, scrub: deps.scrub });
     }
   } catch (err) {
     const code = err instanceof LlmError && err.code === 'auth' ? 'auth' : 'llm';

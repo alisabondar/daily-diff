@@ -5,6 +5,7 @@ import { digests, items, sources, stories, storyItems } from '../db/schema.js';
 import { withRetry } from '../llm/retry.js';
 import type { Llm, LlmJsonOpts, LlmUsage } from '../llm/types.js';
 import type { Digest } from './s1-fetch.js';
+import type { ScrubOpts } from './scrub.js';
 
 /** What every LLM stage (S3–S7) needs. */
 export interface StageCtx {
@@ -14,6 +15,8 @@ export interface StageCtx {
   config: Config;
   fetchFn?: typeof fetch;
   retryDelaysMs?: number[];
+  /** Set when running as the shared scrub (Phase 8). */
+  scrub?: ScrubOpts | null;
 }
 
 /** Calls the LLM with retries, adding usage to `total`. */

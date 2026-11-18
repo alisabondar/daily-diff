@@ -33,7 +33,7 @@ export async function runS5(ctx: StageCtx): Promise<void> {
   const texts = await mapLimit(targets, 4, async (story) => {
     const parts = [await hnText(story, fetchFn)];
     const thread = story.items.find((i) => isReddit(i.discussionUrl))?.discussionUrl;
-    if (thread) parts.push(await redditComments(thread, { fetchFn, version: VERSION }));
+    if (thread && (!ctx.scrub || ctx.scrub.includeReddit)) parts.push(await redditComments(thread, { fetchFn, version: VERSION }));
     const joined = parts.filter(Boolean).join('\n---\n');
     return joined ? truncate(joined, 6000) : null;
   });
