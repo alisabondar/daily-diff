@@ -811,6 +811,8 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 - `rankView(stories: PublishedStory[], s: LocalSettings): { highlights: Record<HighlightSection, PublishedStory[]>, more: PublishedStory[] }`.
 - Keep a story when its `pack ∈ s.packs` and not all of its `sourceKeys` are in `disabledSources` (a story with several sources survives if any of them is enabled).
 - `rank = score + 2·(topic ∈ topics) + 1·(any keyword, case-insensitive, in title or summary) − 3·(a less_like_this feedback exists for a story with the same topic or the same first source)`.
+- Stories with `rank < relevanceThreshold` are dropped first *(made explicit in step 37)*.
+- `rank` gets +1 once for any keyword match, not once per keyword.
 - Highlights:
   - the top `highlightsCap` by rank, among stories whose category has a Highlights section
   - each section ordered by rank
