@@ -773,7 +773,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 #### Step 35 — Scheduled workflow at 5am ET [TDD for the gate]
 **Files:** `src/scrub/schedule.ts`, `.github/workflows/scrub.yml`, `tests/schedule.test.ts`.
 **Spec:**
-- `isScrubHour(now: Date): boolean` is true when the hour in `America/New_York` is 5. Use `Intl.DateTimeFormat`; no date library.
+- `isScrubHour(now: Date): boolean` is true from 05:00 to 06:59 in `America/New_York`. Use `Intl.DateTimeFormat`; no date library. *(Changed during step 35:)* a one-hour window would drop a whole day if the summer 09:17 run started 43+ minutes late. `alreadyPublished(store, date)` makes the second run skip instead. Both run behind `daily-diff scrub --scheduled`; manual runs skip both checks.
 - **The workflow:**
   - Triggers: `schedule: cron '17 9 * * *'` and `'17 10 * * *'`, plus `workflow_dispatch`. Running at :17 avoids the top-of-hour queue, so the scrub is ready around 05:30 ET.
   - The first job step runs `node --import tsx -e` on `isScrubHour`, skipped for `workflow_dispatch`, and stops the job when false.

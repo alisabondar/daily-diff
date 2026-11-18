@@ -5,7 +5,8 @@ import { VERSION } from './version.js';
 const HELP = `daily-diff ${VERSION} — a local-first daily AI & tech briefing
 
 Usage: daily-diff [--port <n>]
-       daily-diff scrub   run the shared scrub and publish it to Supabase
+       daily-diff scrub [--scheduled]   run the shared scrub and publish it to Supabase
+                                         (--scheduled: only 05:00–06:59 ET, once a day)
 
   --port <n>   port to serve on (default 4242), bound to 127.0.0.1
   --version    print the version
@@ -17,7 +18,7 @@ const args = process.argv.slice(2);
 
 if (args[0] === 'scrub') {
   const { runScrubCommand } = await import('./scrub/command.js');
-  process.exit(await runScrubCommand());
+  process.exit(await runScrubCommand(args.includes('--scheduled')));
 }
 
 const known = new Set(['--port', '--version', '--help']);
