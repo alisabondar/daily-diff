@@ -22,7 +22,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "demo": "node --import tsx scripts/seed-demo.ts && DAILY_DIFF_HOME=./.demo-home node --import tsx src/cli.ts"
+    "demo": "node --import tsx scripts/seed-demo.ts && DAILY_DIFF_HOME=./.demo-home node --import tsx src/cli.ts",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:rls": "docker exec -i supabase_db_daily-diff psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/rls.sql"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.92",
@@ -30,6 +33,7 @@
     "@ai-sdk/openai": "^4.0.105",
     "@ai-sdk/openai-compatible": "^3.0.81",
     "@hono/node-server": "^2.1.5",
+    "@supabase/supabase-js": "^2.119.0",
     "ai": "^7.0.157",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.4",
@@ -47,6 +51,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "drizzle-kit": "^0.31.11",
+    "supabase": "^3.2.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
