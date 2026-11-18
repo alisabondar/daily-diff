@@ -19,13 +19,26 @@ Fork this repository on GitHub. GitHub turns scheduled workflows **off** on fork
    npx supabase db push
    ```
 
-3. In the dashboard, under **Project Settings → API keys**, copy the project URL, the **publishable** key and the **secret** key.
+3. Copy three values from the dashboard:
+   - **Project URL** (`https://<ref>.supabase.co`): click **Connect** at the top of the project.
+   - **Publishable key** (`sb_publishable_…`) and **secret key** (`sb_secret_…`): **Settings → API Keys**. If you only see a "Create new API keys" button, click it; the legacy `anon` and `service_role` keys are being retired.
 
 Free projects pause after about a week without activity. The daily scrub writes every morning, which counts as activity.
 
 ## 3. Add secrets and variables
 
-In your fork: **Settings → Secrets and variables → Actions**.
+In your fork: **Settings → Secrets and variables → Actions**. Secrets go on the **Secrets** tab and variables on the **Variables** tab (both under "Repository", not "Environment").
+
+Or use the GitHub CLI from your clone. `gh secret set` prompts for the value, so it never lands in your shell history:
+
+```bash
+gh secret set SUPABASE_SERVICE_ROLE_KEY
+gh secret set ANTHROPIC_API_KEY
+gh variable set SUPABASE_URL --body "https://<ref>.supabase.co"
+gh variable set SUPABASE_PUBLISHABLE_KEY --body "sb_publishable_…"
+gh variable set LLM_PROVIDER --body anthropic
+gh variable set LLM_MODEL --body "<model id from your provider's docs>"
+```
 
 **Secrets** (never shown in logs or the site):
 
@@ -50,7 +63,7 @@ In your fork: **Settings → Secrets and variables → Actions**.
 ## 4. Turn on Actions and Pages
 
 1. **Actions** tab: enable workflows for the fork.
-2. **Settings → Pages**: set **Source** to **GitHub Actions**.
+2. **Settings → Pages**: set **Source** to **GitHub Actions** (or run `gh api -X POST repos/<you>/<repo>/pages -f build_type=workflow`). Until this is done, the **pages** workflow fails at `configure-pages` with "Get Pages site failed… Not Found".
 3. Run the **pages** workflow once (Actions → pages → Run workflow) to publish the site at `https://<you>.github.io/<repo>/`.
 
 ## 5. Sign-in with GitHub (for sync)
