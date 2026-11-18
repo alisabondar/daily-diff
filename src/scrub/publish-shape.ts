@@ -24,7 +24,12 @@ const isRedditUrl = (u: string | null) => !!u && /(^|\.)reddit\.com$/.test(new U
 const isRedditItem = (i: StoryItem) => (i.source.kind === 'rss' && isRedditFeed(i.source.feedUrl)) || isRedditUrl(i.url);
 
 /** Builds the published shape of one digest. Every field is set explicitly; database rows are never spread. */
-export function toPublished(db: Db, digestId: number, { allowReddit = false }: { allowReddit?: boolean } = {}): PublishedScrub {
+export function toPublished(db: Db, digestId: number, opts: { allowReddit?: boolean } = {}): PublishedScrub {
+  return publishWithKeys(db, digestId, opts).scrub;
+}
+
+/** toPublished plus the local story id → published key map (used by the one-time import). Dropped stories have no key. */
+export function publishWithKeys(db: Db, digestId: number, { allowReddit = false }: { allowReddit?: boolean } = {}): { scrub: PublishedScrub; keyById: Map<number, string> } {
   const digest = db.select().from(digests).where(eq(digests.id, digestId)).get();
   if (!digest) throw new Error(`No digest ${digestId}`);
   const keyById = new Map<number, string>();
@@ -62,7 +67,7 @@ export function toPublished(db: Db, digestId: number, { allowReddit = false }: {
     });
   }
   const learn = db.select().from(learnItems).where(eq(learnItems.digestId, digestId)).orderBy(asc(learnItems.id)).all();
-  return {
+  const scrub: PublishedScrub = {
     date: digest.date,
     windowStart: digest.windowStart,
     windowEnd: digest.windowEnd,
@@ -78,4 +83,5 @@ export function toPublished(db: Db, digestId: number, { allowReddit = false }: {
       sourceRef: l.sourceRef,
     })),
   };
+  return { scrub, keyById };
 }

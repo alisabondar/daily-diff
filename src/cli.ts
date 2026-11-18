@@ -7,6 +7,7 @@ const HELP = `daily-diff ${VERSION} — a local-first daily AI & tech briefing
 Usage: daily-diff [--port <n>]
        daily-diff scrub [--scheduled]   run the shared scrub and publish it to Supabase
                                          (--scheduled: only 05:00–06:59 ET, once a day)
+       daily-diff import-local --email <e>  copy ~/.daily-diff into Supabase once
 
   --port <n>   port to serve on (default 4242), bound to 127.0.0.1
   --version    print the version
@@ -15,6 +16,12 @@ Usage: daily-diff [--port <n>]
 Data lives in ~/.daily-diff (override with DAILY_DIFF_HOME).`;
 
 const args = process.argv.slice(2);
+
+if (args[0] === 'import-local') {
+  const { runImportCommand } = await import('./scrub/import-command.js');
+  const i = args.indexOf('--email');
+  process.exit(await runImportCommand(i >= 0 ? args[i + 1] : undefined));
+}
 
 if (args[0] === 'scrub') {
   const { runScrubCommand } = await import('./scrub/command.js');
