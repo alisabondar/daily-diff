@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest';
 import { learnItems, stories, storyItems } from '../src/db/schema.js';
-import { storyKey, toPublished } from '../src/scrub/publish-shape.js';
+import { sourceKey, storyKey, toPublished } from '../src/scrub/publish-shape.js';
 import { seedDigest, seedItem, seedSource, testDb } from './helpers.js';
 
-const STORY_FIELDS = ['key', 'date', 'title', 'links', 'sourceIds', 'pack', 'category', 'topic', 'score', 'summary', 'stats', 'pros', 'cons', 'readMinutes', 'publishedAt'].sort();
-const LINK_FIELDS = ['url', 'sourceId', 'sourceTitle', 'discussionUrl', 'mediaUrl'].sort();
+const STORY_FIELDS = ['key', 'date', 'title', 'links', 'sourceKeys', 'pack', 'category', 'topic', 'score', 'summary', 'stats', 'pros', 'cons', 'readMinutes', 'publishedAt'].sort();
+const LINK_FIELDS = ['url', 'sourceKey', 'sourceTitle', 'discussionUrl', 'mediaUrl'].sort();
 
 test('storyKey is 16 hex chars and stable across tracking params and www.', () => {
   const a = storyKey('https://www.example.com/post?utm_source=x');
@@ -35,7 +35,7 @@ test('toPublished sets exactly the published fields and leaks no content, excerp
   const s = out.stories[0]!;
   expect(Object.keys(s).sort()).toEqual(STORY_FIELDS);
   expect(Object.keys(s.links[0]!).sort()).toEqual(LINK_FIELDS);
-  expect(s).toMatchObject({ key: storyKey('https://lab.dev/a'), title: 'T', pack: 'ai-news', sourceIds: [blog.id], score: 7, publishedAt: 150, summary: 'Sum' });
+  expect(s).toMatchObject({ key: storyKey('https://lab.dev/a'), title: 'T', pack: 'ai-news', sourceKeys: [sourceKey(blog.feedUrl)], score: 7, publishedAt: 150, summary: 'Sum' });
   expect(s.readMinutes).toBeGreaterThan(1);
   const json = JSON.stringify(out);
   for (const secret of ['CONTENT-SECRET', 'EXCERPT-SECRET', 'COMMUNITY-SECRET']) expect(json).not.toContain(secret);
@@ -69,8 +69,8 @@ test('without allowReddit: a mixed story loses pros, cons, Reddit links and Redd
     { src: reddit.id, over: { url: 'https://www.reddit.com/r/x/comments/2/t/' } },
   ]);
   const s = toPublished(db, d.id).stories[0]!;
-  expect(s).toMatchObject({ pros: null, cons: null, sourceIds: [blog.id] });
-  expect(s.links).toEqual([{ url: 'https://lab.dev/m', sourceId: blog.id, sourceTitle: 'Lab Blog', discussionUrl: null, mediaUrl: null }]);
+  expect(s).toMatchObject({ pros: null, cons: null, sourceKeys: [sourceKey(blog.feedUrl)] });
+  expect(s.links).toEqual([{ url: 'https://lab.dev/m', sourceKey: sourceKey(blog.feedUrl), sourceTitle: 'Lab Blog', discussionUrl: null, mediaUrl: null }]);
   expect(JSON.stringify(s)).not.toContain('REDDIT-COMMENT-SECRET');
 });
 
@@ -78,7 +78,7 @@ test('with allowReddit the Reddit links and pros stay', () => {
   const { db, d, blog, reddit, story } = setup();
   story({}, [{ src: blog.id }, { src: reddit.id }]);
   const s = toPublished(db, d.id, { allowReddit: true }).stories[0]!;
-  expect(s.sourceIds).toEqual([blog.id, reddit.id]);
+  expect(s.sourceKeys).toEqual([sourceKey(blog.feedUrl), sourceKey(reddit.feedUrl)]);
   expect(s.pros).toEqual(['p']);
 });
 

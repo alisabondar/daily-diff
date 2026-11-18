@@ -698,7 +698,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 **Files:** `src/scrub/publish-shape.ts`, `tests/publish-shape.test.ts`.
 **Spec:**
 - `storyKey(url: string): string`: the first 16 hex characters of the SHA-256 of `canonicalUrl(url)`, using `node:crypto`.
-- `PublishedStory`: `{ key, date, title, links: { url, sourceId, sourceTitle, discussionUrl, mediaUrl }[], sourceIds: number[], pack: string | null, category, topic, score, summary, stats, pros, cons, readMinutes, publishedAt }`. *(Changed during step 32: `links` replaces `url`/`sourceTitles` because StoryCard renders every outbound link, discussion link and media link.)*
+- `PublishedStory`: `{ key, date, title, links: { url, sourceKey, sourceTitle, discussionUrl, mediaUrl }[], sourceKeys: string[], pack: string | null, category, topic, score, summary, stats, pros, cons, readMinutes, publishedAt }`. *(Changed during step 32: `links` replaces `url`/`sourceTitles` because StoryCard renders every outbound link, discussion link and media link.)*
 - `PublishedScrub`: `{ date, windowStart, windowEnd, stories: PublishedStory[], learn: { type, conceptKey, title, bodyMd, quiz, relatedStoryKey }[] }`.
 - `toPublished(db: Db, digestId: number): PublishedScrub`:
   - It builds every field explicitly. **Never spread a database row.**
@@ -725,8 +725,8 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
   - `scrubs(date text pk, window_start bigint, window_end bigint, published_at timestamptz)`
   - `scrub_stories(key text pk, date text references scrubs, …PublishedStory columns, fts tsvector generated from title || summary)`, plus a GIN index on `fts`
   - `scrub_learn(date, position, …)`
-  - `catalog_sources(id int pk, pack, title, url, type, kind)`
-  - `user_settings(user_id uuid pk references auth.users on delete cascade, packs text[], disabled_sources int[], topics text[], keywords text[], highlights_cap int, relevance_threshold int, onboarded bool, updated_at timestamptz)`
+  - `catalog_sources(key text pk, pack, title, url, type, kind)`
+  - `user_settings(user_id uuid pk references auth.users on delete cascade, packs text[], disabled_sources text[], topics text[], keywords text[], highlights_cap int, relevance_threshold int, onboarded bool, updated_at timestamptz)`
   - `favorites(user_id, story_key, created_at, pk(user_id, story_key))`
   - `favorite_tags(user_id, story_key, tag)`
   - `feedback(user_id, story_key, kind, created_at)`
@@ -749,7 +749,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 #### Step 34 — Publisher and the `scrub` command [TDD]
 **Files:** `src/scrub/store.ts`, `src/scrub/publish.ts`, `src/cli.ts`, `tests/publish.test.ts`.
 **Spec:**
-- `interface ScrubStore { lastPublishedDate(): Promise<string | null>; upsertScrub(s: PublishedScrub): Promise<void>; upsertCatalog(rows): Promise<void> }`. `createSupabaseScrubStore(url, serviceKey)` is the real one and isn't unit-tested.
+- `interface ScrubStore { lastPublished(beforeDate): Promise<{ date, windowEnd } | null>; upsertScrub(s: PublishedScrub): Promise<void>; upsertCatalog(rows): Promise<void> }`. `createSupabaseScrubStore(url, serviceKey)` is the real one and isn't unit-tested.
 - `upsertScrub`:
   - Upserts `scrubs` by date and `scrub_stories` by key.
   - Replaces that date's `scrub_learn` rows.
@@ -760,6 +760,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
   - The window starts at the end of `lastPublishedDate` (capped at 7 days); with none, it's the default first-run window.
   - Then `upsertCatalog` and `upsertScrub(toPublished(...))`.
   - If the pipeline ends raw (`isRaw`), it publishes nothing and throws, so the workflow fails.
+  - *(Added during step 34:)* the window comes from a placeholder "done" digest seeded at the last published `windowEnd`. If a gap makes the build a catch-up, the missed-day digests from step 29 are published under their own dates. The catalog leaves out Reddit sources unless `includeReddit`. `lastPublished` looks strictly before today, so re-running today re-scrubs from the previous day's end.
 - CLI: `daily-diff scrub` reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the environment and exits non-zero on failure. Error output is redacted (both keys).
 **Tests (write first, FakeLlm and an in-memory ScrubStore):**
 - One run publishes a scrub whose stories all have keys.
@@ -808,7 +809,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 **Files:** `src/web/data/rank.ts`, `tests/rank.test.ts`.
 **Spec:**
 - `rankView(stories: PublishedStory[], s: LocalSettings): { highlights: Record<HighlightSection, PublishedStory[]>, more: PublishedStory[] }`.
-- Keep a story when its `pack ∈ s.packs` and none of its `sourceIds` is in `disabledSources` (a story with several sources survives if any of them is enabled).
+- Keep a story when its `pack ∈ s.packs` and not all of its `sourceKeys` are in `disabledSources` (a story with several sources survives if any of them is enabled).
 - `rank = score + 2·(topic ∈ topics) + 1·(any keyword, case-insensitive, in title or summary) − 3·(a less_like_this feedback exists for a story with the same topic or the same first source)`.
 - Highlights:
   - the top `highlightsCap` by rank, among stories whose category has a Highlights section

@@ -3,7 +3,7 @@
 create table public.user_settings (
   user_id uuid primary key references auth.users (id) on delete cascade,
   packs text[] not null default '{}',
-  disabled_sources int[] not null default '{}',
+  disabled_sources text[] not null default '{}',
   topics text[] not null default '{}',
   keywords text[] not null default '{}',
   highlights_cap int not null default 6,

@@ -8,7 +8,7 @@ insert into auth.users (id, email, aud, role) values
   ('00000000-0000-0000-0000-00000000000a', 'a@test.dev', 'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-00000000000b', 'b@test.dev', 'authenticated', 'authenticated');
 insert into public.scrubs (date, window_start, window_end) values ('2026-11-18', 0, 1);
-insert into public.scrub_stories (key, date, title, links, source_ids, topic, score, read_minutes, published_at)
+insert into public.scrub_stories (key, date, title, links, source_keys, topic, score, read_minutes, published_at)
   values ('k1', '2026-11-18', 'Hello', '[]', '{}', 'ai', 7, 1, 0);
 insert into public.favorites (user_id, story_key) values ('00000000-0000-0000-0000-00000000000b', 'k1');
 insert into public.user_settings (user_id) values ('00000000-0000-0000-0000-00000000000b');
@@ -19,7 +19,7 @@ do $$ begin
   if (select count(*) from public.scrub_stories) <> 1 then raise exception 'anon cannot read scrub_stories'; end if;
   if (select count(*) from public.user_settings) <> 0 then raise exception 'anon can read user_settings'; end if;
   begin
-    insert into public.scrub_stories (key, date, title, links, source_ids, topic, score, read_minutes, published_at)
+    insert into public.scrub_stories (key, date, title, links, source_keys, topic, score, read_minutes, published_at)
       values ('k2', '2026-11-18', 'x', '[]', '{}', 'ai', 1, 1, 0);
     raise exception 'anon could insert into scrub_stories';
   exception when insufficient_privilege then null;

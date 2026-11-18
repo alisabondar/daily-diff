@@ -12,7 +12,7 @@ create table public.scrub_stories (
   date text not null references public.scrubs (date) on delete cascade,
   title text not null,
   links jsonb not null,
-  source_ids int[] not null,
+  source_keys text[] not null,
   pack text,
   category text,
   topic text not null,
@@ -42,7 +42,7 @@ create table public.scrub_learn (
 );
 
 create table public.catalog_sources (
-  id int primary key,
+  key text primary key,
   pack text not null,
   title text not null,
   url text not null,
