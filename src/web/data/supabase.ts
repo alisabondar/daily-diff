@@ -7,7 +7,8 @@ export interface CatalogRow { key: string; pack: string; title: string; url: str
 
 /** The browser's Supabase client: the project URL and the publishable key only (row-level security protects data). */
 export function createBrowserClient(): SupabaseClient {
-  return createClient(PUBLIC_ENV.supabaseUrl, PUBLIC_ENV.publishableKey);
+  // PKCE returns ?code= in the query string, which leaves the hash router alone.
+  return createClient(PUBLIC_ENV.supabaseUrl, PUBLIC_ENV.publishableKey, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true } });
 }
 
 type StoryRow = {

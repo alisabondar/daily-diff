@@ -51,7 +51,8 @@ export type OnChange = (prev: LocalState, next: LocalState) => void;
 export function StoreProvider({ children, onChange }: { children: ReactNode; onChange?: OnChange }) {
   const storage = useMemo(browserStorage, []);
   const [state, setState] = useState(() => loadLocal(storage));
-  const [signInRequested, setSignInRequested] = useState(false);
+  // Returning from GitHub sign-in (?code=…) counts as the explicit sign-in action, even before onboarding.
+  const [signInRequested, setSignInRequested] = useState(() => new URLSearchParams(window.location.search).has('code'));
   const gate = useMemo(() => createGate(createBrowserClient), []);
   const client = gate.get(state, { forSignIn: signInRequested });
   const reader = useMemo(() => {

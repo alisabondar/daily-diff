@@ -889,6 +889,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
   - The streak keeps the higher `best` and the later `last_date`.
 - `UserStore` is an interface (`load`, `save`); the Supabase implementation upserts the user tables.
 - After the first merge, every change writes through to Supabase and to `localStorage`. Signing out keeps `localStorage`.
+- *(Made explicit in step 40:)* a device merges only on its first sign-in for that user (it records `daily-diff:synced-user`). After that the remote state replaces the local copy, so a favorite removed on another device doesn't come back. Auth uses the PKCE flow, so the redirect's `?code=` never touches the hash router, and a `?code=` in the URL counts as the explicit sign-in action for the onboarding gate.
 **Tests (write first):** each merge rule; merging twice changes nothing; a remote with an older `updatedAt` doesn't overwrite newer local settings.
 **Verify:**
 - Baseline.

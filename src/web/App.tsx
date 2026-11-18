@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { AccountPanel, DeleteAccount, SignInLink } from './components/Account';
+import { AccountProvider } from './data/account';
 import { StoreProvider, useStore } from './data/store';
 import { Archive } from './pages/Archive';
 import { Favorites } from './pages/Favorites';
@@ -62,7 +64,7 @@ function Shell() {
         {!route ? (
           <p>Not found.</p>
         ) : gated ? (
-          <Onboarding onFinish={() => { window.location.hash = '#/'; }} />
+          <Onboarding onFinish={() => { window.location.hash = '#/'; }} signIn={<SignInLink />} />
         ) : route.page === 'today' ? (
           <Today />
         ) : route.page === 'digest' ? (
@@ -74,9 +76,9 @@ function Shell() {
         ) : route.page === 'sources' ? (
           <Sources />
         ) : route.page === 'settings' ? (
-          <Settings />
+          <Settings account={<AccountPanel />} />
         ) : route.page === 'privacy' ? (
-          <Privacy />
+          <Privacy deleteAccount={<DeleteAccount />} />
         ) : (
           <Onboarding onFinish={() => { window.location.hash = '#/'; }} />
         )}
@@ -88,7 +90,9 @@ function Shell() {
 export function App() {
   return (
     <StoreProvider>
-      <Shell />
+      <AccountProvider>
+        <Shell />
+      </AccountProvider>
     </StoreProvider>
   );
 }
