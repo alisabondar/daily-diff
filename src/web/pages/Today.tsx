@@ -103,7 +103,7 @@ export function Today({ status, date }: { status: Status; date?: string }) {
   return (
     <div>
       {!date && status.progress.running && <ProgressStrip message={status.progress.message} showing={shown && shown !== status.today?.date ? shown : null} />}
-      {digest && <Banner isRaw={digest.meta.isRaw} errorCode={digest.meta.errorCode} failedSources={date ? [] : status.failedSources} />}
+      {digest && <Banner isRaw={digest.meta.isRaw} errorCode={digest.meta.errorCode} failedSources={date ? [] : status.failedSources} day={shown} />}
       {!shown && !status.progress.running && <p className="text-neutral-500">No digest yet.</p>}
       {missing && <p className="text-neutral-500">No digest for {shown}.</p>}
       {digest && (

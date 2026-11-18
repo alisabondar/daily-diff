@@ -16,9 +16,16 @@ export function friendlyError(raw: string | null): string {
   return 'Failed to load';
 }
 
-export function Banner({ isRaw, errorCode, failedSources }: { isRaw: boolean; errorCode: string | null; failedSources: Status['failedSources'] }) {
+const DISMISS_KEY = 'daily-diff:dismissed-failures';
+const readDismissed = () => { try { return localStorage.getItem(DISMISS_KEY); } catch { return null; } };
+
+export function Banner({ isRaw, errorCode, failedSources, day }: { isRaw: boolean; errorCode: string | null; failedSources: Status['failedSources']; day: string | null }) {
   const [showFailed, setShowFailed] = useState(false);
-  const n = failedSources.length;
+  // A dismissal covers this day's exact set of failures; a new failure or a new day shows the notice again.
+  const signature = `${day}|${failedSources.map((s) => s.id).sort().join(',')}`;
+  const [dismissed, setDismissed] = useState(readDismissed);
+  const dismiss = () => { try { localStorage.setItem(DISMISS_KEY, signature); } catch { /* still hidden for this visit */ } setDismissed(signature); };
+  const n = dismissed === signature ? 0 : failedSources.length;
   return (
     <>
       {isRaw && errorCode === 'auth' && (
@@ -29,9 +36,12 @@ export function Banner({ isRaw, errorCode, failedSources }: { isRaw: boolean; er
         <Box>
           <div className="flex items-baseline justify-between gap-4">
             <span>{n === 1 ? '1 source' : `${n} sources`} couldn’t be fetched today.</span>
-            <button onClick={() => setShowFailed(!showFailed)} aria-expanded={showFailed} className="shrink-0 text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100">
-              {showFailed ? 'Hide' : 'Details'}
-            </button>
+            <span className="flex shrink-0 gap-3 text-xs text-neutral-500">
+              <button onClick={() => setShowFailed(!showFailed)} aria-expanded={showFailed} className="hover:text-neutral-900 dark:hover:text-neutral-100">
+                {showFailed ? 'Hide' : 'Details'}
+              </button>
+              <button onClick={dismiss} aria-label="Dismiss" className="hover:text-neutral-900 dark:hover:text-neutral-100">✕</button>
+            </span>
           </div>
           {showFailed && (
             <ul className="mt-2 space-y-0.5 text-neutral-600 dark:text-neutral-300">

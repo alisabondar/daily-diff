@@ -75,6 +75,12 @@ test('Reddit feed sets discussionUrl to the item link', async () => {
   });
 });
 
+test('every RSS request sends the daily-diff User-Agent, not only Reddit', async () => {
+  const f = fakeFetch({ 'https://src.dev/feed': fixture('feeds/blog-rss2.xml') });
+  await fetchRss(source(), since, { fetchFn: f });
+  expect(new Headers(f.calls[0]!.init?.headers).get('User-Agent')).toMatch(/^daily-diff\//);
+});
+
 test('a timeout rejects with a clear message', async () => {
   const hang = (async (_: unknown, init?: RequestInit) =>
     new Promise<Response>((_, reject) => init?.signal?.addEventListener('abort', () => reject(init.signal!.reason)))) as typeof fetch;

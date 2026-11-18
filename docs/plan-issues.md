@@ -6,6 +6,12 @@
 
 - **2026-11-13, step 30: rule 7 gains one outbound call (needs the human's approval).** Suggested sources are site URLs chosen by the LLM. Feed discovery may fetch one only after the user clicks Check, and only if it passes `isSafePublicUrl`. That's the same kind of fetch as discovery on a URL the user pastes, but the URL comes from the model. Recommendation: approve, because nothing is fetched without a click and the existing SSRF guard applies. **Status:** approved by the human on 2026-11-13 ("implement everything we've discussed").
 
+### Change (2026-11-17): User-Agent on every RSS fetch; dismissible failed-sources notice
+- **Requested by human:** fix the TechCrunch and Reddit fetch errors, or make the notice dismissible if they can't be fixed.
+- **TechCrunch (403):** it blocks Node's default `User-Agent`. Checked live on 2026-11-17: `node` got 403 and `daily-diff/0.1.0` got 200. `fetchRss` now sends `User-Agent: daily-diff/<version>` on every feed, not only Reddit (S1 previously sent it only to Reddit).
+- **Reddit (404):** not fixed. The combined feed returned 404 with our User-Agent once, then 429 to every Reddit URL, including single subreddits. It's Reddit's unauthenticated throttling, and Reddit stays best-effort.
+- **Banner:** the failed-sources notice gains a ✕ button. Dismissing it stores `<digest date>|<sorted failed source ids>` in `localStorage`, so the notice stays hidden for that day's same failures and comes back on a new day or when a new source fails.
+
 ### Change (2026-11-10): demo GIF for the README
 - **Requested by human:** a Playwright script that records the app and converts the recording for the README.
 - **Dependencies:** Playwright, `gifenc` and `jpeg-js` aren't in §B.2, so they are **not** project dependencies. `scripts/record-demo.mjs` loads them from a scratch folder named by `DEMO_DEPS` (setup in the script header). `package.json` is unchanged. There's no `ffmpeg` on the machine, so frames come from Chrome's screencast (CDP) and are encoded to GIF in JS with one shared palette.

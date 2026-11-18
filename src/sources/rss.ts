@@ -10,7 +10,7 @@ export const isRedditFeed = (feedUrl: string) => new URL(feedUrl).hostname.endsW
 
 export async function fetchRss(source: Source, since: number, { fetchFn, timeoutMs = 10_000 }: FetchOpts = {}): Promise<RawItem[]> {
   const isReddit = isRedditFeed(source.feedUrl);
-  const res = await fetchWithTimeout(source.feedUrl, { fetchFn, timeoutMs, headers: isReddit ? { 'User-Agent': `daily-diff/${VERSION}` } : undefined });
+  const res = await fetchWithTimeout(source.feedUrl, { fetchFn, timeoutMs, headers: { 'User-Agent': `daily-diff/${VERSION}` } });
   const feed = await parser.parseString(await res.text());
   const out: RawItem[] = [];
   for (const it of feed.items) {
