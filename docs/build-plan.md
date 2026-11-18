@@ -698,7 +698,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 **Files:** `src/scrub/publish-shape.ts`, `tests/publish-shape.test.ts`.
 **Spec:**
 - `storyKey(url: string): string`: the first 16 hex characters of the SHA-256 of `canonicalUrl(url)`, using `node:crypto`.
-- `PublishedStory`: `{ key, date, title, url, sourceIds: number[], sourceTitles: string[], pack: string, category, topic, score, summary, stats, pros, cons, readMinutes, publishedAt }`.
+- `PublishedStory`: `{ key, date, title, links: { url, sourceId, sourceTitle, discussionUrl, mediaUrl }[], sourceIds: number[], pack: string | null, category, topic, score, summary, stats, pros, cons, readMinutes, publishedAt }`. *(Changed during step 32: `links` replaces `url`/`sourceTitles` because StoryCard renders every outbound link, discussion link and media link.)*
 - `PublishedScrub`: `{ date, windowStart, windowEnd, stories: PublishedStory[], learn: { type, conceptKey, title, bodyMd, quiz, relatedStoryKey }[] }`.
 - `toPublished(db: Db, digestId: number): PublishedScrub`:
   - It builds every field explicitly. **Never spread a database row.**

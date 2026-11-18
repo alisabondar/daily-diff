@@ -35,6 +35,6 @@ export function serializeStories(db: Db, rows: Story[]) {
 
 const WPM = 230;
 /** Estimated minutes to read the longest linked item (feeds often carry only an excerpt, so this is a floor). */
-const readMinutes = (contents: string[]) => Math.max(1, Math.round(Math.max(0, ...contents.map((c) => c.split(/\s+/).filter(Boolean).length)) / WPM));
+export const readMinutes = (contents: string[]) => Math.max(1, Math.round(Math.max(0, ...contents.map((c) => c.split(/\s+/).filter(Boolean).length)) / WPM));
 
 export const storyById = (db: Db, id: number) => db.select().from(stories).where(and(eq(stories.id, id))).get();
