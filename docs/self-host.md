@@ -57,6 +57,8 @@ gh variable set LLM_MODEL --body "<model id from your provider's docs>"
 | `LLM_PROVIDER` | `anthropic`, `openai`, `google`, `openrouter` or `bedrock` |
 | `LLM_MODEL` | The model for the heavier stages; look up current model IDs in your provider's docs |
 | `LLM_FAST_MODEL` | Optional: a cheaper model for grouping and scoring |
+| `LLM_EFFORT` | Optional: reasoning effort (`provider-default`, `low`, `medium`, `high`, …) |
+| `AWS_REGION` | Bedrock only: the region of your inference profile, e.g. `us-east-1` |
 | `SCRUB_PROFILE` | Optional: a free-text description of what you care about; the scrub ranks by it |
 | `SCRUB_INCLUDE_REDDIT` | Optional: `true` to fetch Reddit feeds and comments (off on the public site) |
 
