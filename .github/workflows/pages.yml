@@ -1,0 +1,55 @@
+# Builds the hosted web app and deploys it to GitHub Pages (Phase 8, step 39).
+# Needs repo variables SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (both public by design; row-level security protects the data).
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/configure-pages@v6
+      - name: Build
+        run: npx vite build
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          VITE_GITHUB_REPO: ${{ github.repository }}
+      - name: Check the bundle carries no secret
+        run: |
+          # Key-shaped values only: supabase-js itself contains the bare prefix `sb_secret_`.
+          # c2VydmljZV9yb2xl is base64 for "service_role" inside a JWT.
+          if grep -rEl 'sb_secret_[A-Za-z0-9_-]{10,}|c2VydmljZV9yb2xl|sk-ant-[A-Za-z0-9_-]{10,}|sk-proj-[A-Za-z0-9_-]{10,}|AIza[0-9A-Za-z_-]{30,}' dist/web; then
+            echo 'A secret-looking value is in the bundle'; exit 1
+          fi
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/web
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
