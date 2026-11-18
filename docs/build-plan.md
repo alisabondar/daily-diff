@@ -70,12 +70,14 @@ Install the current stable versions and commit the lockfile.
 | `zod` | Schemas for LLM output and API input |
 | `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`, `@ai-sdk/openai-compatible` | LLM providers. OpenRouter and Ollama both go through `openai-compatible` |
 | `react`, `react-dom` | Web UI |
+| `@supabase/supabase-js` | Hosted app data and auth (added 2026-11-17, Phase 8) |
 
 | Dev | Purpose |
 |---|---|
 | `typescript`, `tsx`, `vitest`, `drizzle-kit` | Build, run, test, migrations |
 | `vite`, `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite` | Web build and styling |
 | `@types/node`, `@types/better-sqlite3`, `@types/react`, `@types/react-dom` | Types |
+| `supabase` (CLI) | Local Supabase stack and migrations (added 2026-11-17, Phase 8) |
 
 Not allowed: a router library, UI component kits, state libraries, HTML parsers, date libraries, loggers, or `open`.
 
@@ -647,6 +649,278 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 **Tests (write first, with FakeLlm):** suggestions come back trimmed to 6; unsafe URLs (`http:`, `localhost`, a private IP) are dropped; a host already among the sources (with and without `www.`) is dropped; duplicate hosts collapse to one; the profile and existing source titles appear in the prompt; `suggestSources` makes no `fetchFn` call (a throwing fake `fetchFn` passed through the deps); API: the happy path, 400 on an empty profile, an `LlmError` returns `{ ok:false, code }` with no key in the body.
 **Verify:** baseline, plus a manual check: with a real key and a non-AI profile (for example "fintech infrastructure engineer"), suggest, check one, add it, and confirm it's fetched in the next build.
 
+### Phase 8 — Shared scrub, hosted app and sync (added 2026-11-17 at the human's request)
+
+**Design:** `docs/superpowers/specs/2026-11-17-shared-scrub-design.md`, approved 2026-11-17 and revised 2026-11-18. Read it before step 31. Where a step and the design differ, the step wins.
+
+**Milestones:**
+- **M1 (steps 31–39):** the shared scrub and a hosted, phone-friendly site with no accounts.
+- **M2 (steps 40–41):** sign-in, sync, and the import of local data.
+- **Step 42 (cleanup):** removes the old local server code, and waits until M2 has been in use.
+- Stop and report to the human after step 39.
+
+**Amendments that apply from step 31 on:**
+- **Rule 7:**
+  - The hosted web app is a static site; there's no server for it to bind.
+  - The scrub's outbound calls are the existing list plus the Supabase project URL. The browser's only outbound calls are to the Supabase project URL.
+  - The LLM key and `SUPABASE_SERVICE_ROLE_KEY` exist only as GitHub Actions secrets or in the environment of a CLI run. Neither appears in the repo, the web bundle (`VITE_*` variables carry only the URL and the publishable key), logs or error text.
+  - Every Supabase table has row-level security turned on.
+- **§B.2:** `@supabase/supabase-js` (runtime) and `supabase` (the CLI, dev) are added, approved 2026-11-17.
+- **Tests:** they never reach Supabase. Code that writes takes an injected `ScrubStore` or `UserStore` interface, and tests pass in-memory fakes. Code that needs the clock takes `now`.
+- **Published field list (§3 of the design):** only the fields in `PublishedStory` (step 32) ever leave the scrub.
+- **No Reddit in the shared scrub:** Reddit content is published only by forks that set `SCRUB_INCLUDE_REDDIT=true`. Reddit's terms restrict republishing.
+- **The one exception to the onboarding gate:** the explicit "Already have an account? Sign in" action (step 40) may create the client before onboarding is finished.
+
+#### Step 31 — Scrub mode for the pipeline [TDD]
+**Files:** `src/pipeline/run.ts`, `src/pipeline/s1-fetch.ts`, `src/pipeline/s6-summarize.ts`, `src/pipeline/context.ts`, `tests/scrub-mode.test.ts`.
+**Why:** one run has to cover everyone's possible filters.
+**Spec:**
+- `StageCtx` gains `scrub: { profile: string; includeReddit: boolean } | null`. When it's set:
+  - **S1** fetches every source from the packs, ignoring `sources.enabled`, **except Reddit feeds (`isRedditFeed`) unless `scrub.includeReddit`**. User-added sources don't exist in a scrub, which runs on a fresh database.
+  - **S5** skips `redditComments` unless `scrub.includeReddit`.
+  - **S4** uses `scrub.profile` in place of `config.profile`.
+  - **S6** summarizes `selectForSummary(stories, { threshold, perGroup: 6, cap: 60 })` instead of the top 15.
+  - **S7** is unchanged. The Highlights it writes stay local and are never published.
+- `selectForSummary(stories: { id, score, category, topic }[], opts) → number[]`:
+  - Stories below `threshold` are excluded.
+  - Take the top `perGroup` stories by score from each `category` and from each `topic`, merged without duplicates. If that exceeds `cap`, keep the highest scores.
+  - Every `model` story above the threshold is always kept, as today.
+  - Ties go to the lower id.
+**Tests (write first):**
+- S1 in scrub mode fetches a disabled source, and outside scrub mode it doesn't.
+- In scrub mode a Reddit feed isn't fetched, and S5 makes no Reddit comment call. With `includeReddit` both happen.
+- S4's system prompt contains `scrub.profile`.
+- `selectForSummary`: per-category picks, per-topic picks, merging without duplicates, the cap, the threshold, `model` stories always kept, ties.
+- S6 summarizes exactly the selected ids.
+**Verify:** baseline.
+
+#### Step 32 — Published shape and stable keys [TDD]
+**Files:** `src/scrub/publish-shape.ts`, `tests/publish-shape.test.ts`.
+**Spec:**
+- `storyKey(url: string): string`: the first 16 hex characters of the SHA-256 of `canonicalUrl(url)`, using `node:crypto`.
+- `PublishedStory`: `{ key, date, title, url, sourceIds: number[], sourceTitles: string[], pack: string, category, topic, score, summary, stats, pros, cons, readMinutes, publishedAt }`.
+- `PublishedScrub`: `{ date, windowStart, windowEnd, stories: PublishedStory[], learn: { type, conceptKey, title, bodyMd, quiz, relatedStoryKey }[] }`.
+- `toPublished(db: Db, digestId: number): PublishedScrub`:
+  - It builds every field explicitly. **Never spread a database row.**
+  - `url` is the first item's URL. `pack` is the first item's source's pack.
+  - Stories without a summary are still published, with `summary: null`, so filters can still find them.
+  - With `{ allowReddit: false }` (the default):
+    - a story whose items are all from Reddit sources is left out
+    - any story with a Reddit item or a Reddit `discussionUrl` is published with `pros` and `cons` set to `null`, and its Reddit source ids left out
+    
+    This also covers history imported in step 41.
+- Signature: `toPublished(db: Db, digestId: number, opts?: { allowReddit?: boolean }): PublishedScrub`.
+**Tests (write first):**
+- Keys are stable across tracking parameters and `www.`.
+- The exact field set: `Object.keys` of a story equals the list above, so `content`, `excerpt`, usage and errors can't leak.
+- A planted item `content` string doesn't appear anywhere in `JSON.stringify` of the result.
+- Learn items map `relatedStoryId` to a key.
+- With `allowReddit` false: a Reddit-only story is dropped, a mixed story loses its pros, cons and Reddit source id, and a Reddit comment string planted in pros doesn't appear in the output.
+**Verify:** baseline.
+
+#### Step 33 — Supabase schema and row-level security
+**Files:** `supabase/config.toml`, `supabase/migrations/0001_scrub.sql`, `supabase/migrations/0002_users.sql`, `supabase/tests/rls.sql`, `package.json` (`supabase` dev dependency; scripts `db:start`, `db:reset`).
+**Spec:**
+- **Tables:**
+  - `scrubs(date text pk, window_start bigint, window_end bigint, published_at timestamptz)`
+  - `scrub_stories(key text pk, date text references scrubs, …PublishedStory columns, fts tsvector generated from title || summary)`, plus a GIN index on `fts`
+  - `scrub_learn(date, position, …)`
+  - `catalog_sources(id int pk, pack, title, url, type, kind)`
+  - `user_settings(user_id uuid pk references auth.users on delete cascade, packs text[], disabled_sources int[], topics text[], keywords text[], highlights_cap int, relevance_threshold int, onboarded bool, updated_at timestamptz)`
+  - `favorites(user_id, story_key, created_at, pk(user_id, story_key))`
+  - `favorite_tags(user_id, story_key, tag)`
+  - `feedback(user_id, story_key, kind, created_at)`
+  - `streaks(user_id pk, current int, best int, last_date text)`
+  - The `user_id` foreign keys all cascade on delete.
+- **Row-level security:**
+  - Scrub and catalog tables: `select` for `anon` and `authenticated`. There's no write policy; the service role bypasses RLS.
+  - User tables: every command uses `using (user_id = auth.uid()) with check (user_id = auth.uid())`.
+  - `scrub_stories` rows referenced by `favorites` are never deleted, because no delete policy or job exists.
+- **`delete_my_account()`:** a `security definer` SQL function that deletes `auth.users where id = auth.uid()`. Grant execute to `authenticated` only.
+**Verify:**
+- `npx supabase db reset` on a local stack applies both migrations cleanly.
+- `supabase/tests/rls.sql`, run with `psql`, shows:
+  - `anon` can read `scrub_stories` and can't insert into it.
+  - User A can't read or write user B's `favorites`.
+  - `anon` can't read `user_settings`.
+  - `delete_my_account()` cascades.
+- Record the output in the commit body.
+
+#### Step 34 — Publisher and the `scrub` command [TDD]
+**Files:** `src/scrub/store.ts`, `src/scrub/publish.ts`, `src/cli.ts`, `tests/publish.test.ts`.
+**Spec:**
+- `interface ScrubStore { lastPublishedDate(): Promise<string | null>; upsertScrub(s: PublishedScrub): Promise<void>; upsertCatalog(rows): Promise<void> }`. `createSupabaseScrubStore(url, serviceKey)` is the real one and isn't unit-tested.
+- `upsertScrub`:
+  - Upserts `scrubs` by date and `scrub_stories` by key.
+  - Replaces that date's `scrub_learn` rows.
+  - Re-running the same date is idempotent.
+- `runScrub({ store, now, fetchFn, llmFactory, env })`:
+  - Uses a fresh temporary `DAILY_DIFF_HOME`.
+  - Seeds the packs and runs the pipeline with `scrub: { profile: env.SCRUB_PROFILE ?? '', includeReddit: env.SCRUB_INCLUDE_REDDIT === 'true' }`, and calls `toPublished` with `allowReddit` set to the same value.
+  - The window starts at the end of `lastPublishedDate` (capped at 7 days); with none, it's the default first-run window.
+  - Then `upsertCatalog` and `upsertScrub(toPublished(...))`.
+  - If the pipeline ends raw (`isRaw`), it publishes nothing and throws, so the workflow fails.
+- CLI: `daily-diff scrub` reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the environment and exits non-zero on failure. Error output is redacted (both keys).
+**Tests (write first, FakeLlm and an in-memory ScrubStore):**
+- One run publishes a scrub whose stories all have keys.
+- A second run for the same date doesn't duplicate.
+- The window starts at the previous published date's end.
+- A raw build publishes nothing and rejects.
+- The service key never appears in thrown messages.
+**Verify:** baseline, plus a manual check: run against the local Supabase stack with a real LLM key, then query `scrub_stories` and confirm the row count is above 0.
+
+#### Step 35 — Scheduled workflow at 5am ET [TDD for the gate]
+**Files:** `src/scrub/schedule.ts`, `.github/workflows/scrub.yml`, `tests/schedule.test.ts`.
+**Spec:**
+- `isScrubHour(now: Date): boolean` is true when the hour in `America/New_York` is 5. Use `Intl.DateTimeFormat`; no date library.
+- **The workflow:**
+  - Triggers: `schedule: cron '17 9 * * *'` and `'17 10 * * *'`, plus `workflow_dispatch`. Running at :17 avoids the top-of-hour queue, so the scrub is ready around 05:30 ET.
+  - The first job step runs `node --import tsx -e` on `isScrubHour`, skipped for `workflow_dispatch`, and stops the job when false.
+  - Then `npm ci` and `npx tsx src/cli.ts scrub`, with secrets for the LLM key and `SUPABASE_SERVICE_ROLE_KEY`, and variables for `SUPABASE_URL`, the provider and models, `SCRUB_PROFILE` and `SCRUB_INCLUDE_REDDIT`.
+  - `permissions: contents: write` (keepalive only).
+- **Keepalive:** after a successful scrub, if the last commit on the default branch is older than 50 days, commit `scrub/last-run` (containing the date) as `github-actions[bot]`. Check the 60-day rule against current GitHub docs and note the URL in the workflow comment.
+**Tests (write first):**
+- January (EST): true at 10:17 UTC and false at 09:17 UTC.
+- July (EDT): true at 09:17 UTC and false at 10:17 UTC.
+- 04:59 and 06:00 are false.
+- Both daylight-saving transition days behave correctly.
+**Verify:** baseline, plus `workflow_dispatch` on the repo succeeds and the day's scrub appears in Supabase. Record the run URL.
+
+#### Step 36 — Web data layer and the onboarding gate [TDD]
+**Files:** `src/web/data/local.ts`, `src/web/data/supabase.ts`, `src/web/data/index.ts`, `tests/web-data.test.ts`.
+**Spec:**
+- `LocalSettings`: `{ onboarded, packs, disabledSources, topics: Topic[], keywords: string[], highlightsCap, relevanceThreshold, favorites: {key, createdAt, tags}[], feedback: {key, kind, createdAt}[], streak }`.
+- `loadLocal(storage)` and `saveLocal(storage, s)` use the key `daily-diff:v2`. They tolerate a missing or bad value by returning defaults, and a throwing `storage` the same way.
+- `getClient(settings, factory): SupabaseClient | null` returns `null` and **never calls `factory`** while `settings.onboarded` is false. `factory` is `createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)`, created once.
+- `getClient(settings, factory, { forSignIn: true })` is the single gate exception. It may create the client before onboarding, and it's used only by the sign-in action.
+- Read functions `scrubFor(client, date, cache)`, `scrubDates(client)`, `search(client, q)` (`textSearch` on `fts`), `catalog(client)`. Each returns typed rows.
+- **Day cache:** a published day never changes, so `scrubFor` reads `localStorage` key `daily-diff:scrub:<date>` first and fetches only on a miss. It stores the 14 most recent dates and evicts the oldest. Storage errors just skip the cache.
+**Tests (write first):**
+- Before onboarding, `getClient` returns null and a spy factory has 0 calls.
+- After onboarding, it's called once even across repeated `getClient` calls.
+- `forSignIn` creates the client before onboarding.
+- `scrubFor` hits the network once per date, then serves the cache. It evicts the 15th date, and still works when the storage throws.
+- `loadLocal` handles a corrupt value and a throwing storage.
+- Saving then loading gives back the same settings.
+**Verify:** baseline.
+
+#### Step 37 — Ranking on the client [TDD]
+**Files:** `src/web/data/rank.ts`, `tests/rank.test.ts`.
+**Spec:**
+- `rankView(stories: PublishedStory[], s: LocalSettings): { highlights: Record<HighlightSection, PublishedStory[]>, more: PublishedStory[] }`.
+- Keep a story when its `pack ∈ s.packs` and none of its `sourceIds` is in `disabledSources` (a story with several sources survives if any of them is enabled).
+- `rank = score + 2·(topic ∈ topics) + 1·(any keyword, case-insensitive, in title or summary) − 3·(a less_like_this feedback exists for a story with the same topic or the same first source)`.
+- Highlights:
+  - the top `highlightsCap` by rank, among stories whose category has a Highlights section
+  - each section ordered by rank
+  - ties go to the higher `score`, then to `key`
+- More is everything else with `rank ≥ relevanceThreshold`, in the §B.4 section order.
+**Tests (write first):**
+- Pack filtering, source filtering, and a story with several sources.
+- The topic boost, a keyword match (case-insensitive) and the less-like-this penalty, each moving a story across the threshold.
+- The cap, section grouping and tie-breaking.
+- Empty settings: no topics or keywords still produces a view.
+**Verify:** baseline.
+
+#### Step 38 — Pages on the new data layer
+**Files:** `src/web/App.tsx`, `src/web/pages/{Onboarding,Today,Archive,Favorites,Sources,Settings,Privacy}.tsx`, `src/web/components/StoryCard.tsx`, `.github/ISSUE_TEMPLATE/suggest-source.yml`.
+**Spec:**
+- **Onboarding:** pick packs, topics (the `TOPICS` chips) and keywords. The Finish button sets `onboarded` and only then creates the client. There's no provider or key step. In M1 there is no sign-in link yet; step 40 adds "Already have an account? Sign in".
+- **Today and Archive:**
+  - Built from `scrubFor` and `rankView`.
+  - The Archive date list comes from `scrubDates`, and Archive search uses `search`.
+  - Remove the catch-up label, the missed-day UI and the progress strip.
+- **Favorites, tags and "Less like this"** write to the local settings (synced in step 40).
+- **Sources:**
+  - A catalog grouped by pack, with toggles.
+  - A **Suggest a source** link: `https://github.com/${VITE_GITHUB_REPO}/issues/new?template=suggest-source.yml`.
+  - Remove Add source, feed discovery and suggested sources.
+- **Settings:** topics, keywords, the Highlights cap and the threshold. Remove the provider, model and key fields.
+- **Privacy:**
+  - Lists what's stored on the device and, if signed in, in Supabase, and states there's no analytics.
+  - Has a Delete account button that calls `delete_my_account()`. It's shown only when signed in (step 40).
+- **Issue template fields:** site URL, feed URL (optional), pack, and why.
+**Verify:**
+- Baseline.
+- Against the local Supabase stack, with a published scrub:
+  - Onboard, and confirm in the network panel that **no request goes to Supabase before Finish**.
+  - Today shows a filtered view; toggling a pack changes it after a reload.
+  - Archive search finds a story.
+  - The suggest link opens the issue form with the template.
+  - Light, dark and 375px width all work.
+- Attach screenshots to the commit.
+
+#### Step 39 — Deploy and the fork guide (end of M1)
+**Files:** `.github/workflows/pages.yml`, `vite.config.ts` (`base` from `VITE_BASE`), `docs/self-host.md`, `README.md`.
+**Spec:**
+- **`pages.yml`:**
+  - Runs on pushes to `main` and builds with `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_GITHUB_REPO` from repo variables.
+  - `VITE_BASE` is `/<repo>/`.
+  - Deploys with the official Pages actions; look up current versions.
+- **`docs/self-host.md`:**
+  1. Fork.
+  2. Create a Supabase project and run `supabase db push`.
+  3. Add the secrets and variables (an exact list, including `SCRUB_INCLUDE_REDDIT`).
+  4. Turn on Actions (schedules are off on forks) and Pages.
+  5. Optionally set `SCRUB_PROFILE` and edit the packs.
+  6. Run `workflow_dispatch` once.
+  
+  The GitHub sign-in setup is added in step 40.
+- **README:** the hosted site, how filtering works, and forks.
+**Verify:**
+- Baseline.
+- The Pages URL loads on desktop and on a phone, onboards and shows today's scrub.
+- `grep` the built `dist/` for the service key's prefix and for `sk-`/`AIza`: no hits.
+- A scheduled 05:17/10:17 UTC run publishes on its own; record the run URL.
+
+#### Step 40 — GitHub sign-in and sync [TDD for the merge] (M2)
+**Files:** `src/web/data/sync.ts`, `src/web/components/SignIn.tsx`, `src/web/pages/{Settings,Onboarding}.tsx`, `docs/self-host.md`, `tests/sync.test.ts`.
+**Spec:**
+- **Sign-in is GitHub OAuth only:** `signInWithOAuth({ provider: 'github', options: { redirectTo: location.origin + location.pathname } })`. Look the exact API up in the current Supabase docs. No email sign-in, so no email provider is needed.
+- Onboarding gains "Already have an account? Sign in", which uses `getClient(..., { forSignIn: true })`. After sign-in, a remote `user_settings` row with `onboarded = true` completes onboarding on this device.
+- `docs/self-host.md` gains the GitHub OAuth app setup: create the app, set the callback URL, and add the client id and secret in Supabase Auth.
+- `mergeLocalIntoRemote(local: LocalSettings, remote: RemoteState | null): RemoteState`:
+  - With no remote row, local becomes remote.
+  - Otherwise, the settings with the newer `updatedAt` win.
+  - Favorites, tags and feedback are unioned by `(key)` / `(key, tag)` / `(key, kind, createdAt)`.
+  - The streak keeps the higher `best` and the later `last_date`.
+- `UserStore` is an interface (`load`, `save`); the Supabase implementation upserts the user tables.
+- After the first merge, every change writes through to Supabase and to `localStorage`. Signing out keeps `localStorage`.
+**Tests (write first):** each merge rule; merging twice changes nothing; a remote with an older `updatedAt` doesn't overwrite newer local settings.
+**Verify:**
+- Baseline.
+- Manual, against local Supabase with a GitHub OAuth app:
+  - Sign in on two browser profiles; a favorite made on one appears on the other after a reload.
+  - Delete account removes the rows.
+
+#### Step 41 — One-time import of local data [TDD] (M2)
+**Files:** `src/scrub/import-local.ts`, `src/cli.ts`, `tests/import-local.test.ts`.
+**Spec:**
+- `importLocal({ db, scrubStore, userStore, userId })`:
+  - For every `done` digest, `upsertScrub(toPublished(db, id, { allowReddit: false }))`. The owner's history joins the public archive without Reddit content.
+  - Then map favorites, favorite tags and feedback from `story_id` to `storyKey`, and the streak to the user's rows through `userStore`.
+  - It returns `{ scrubs, stories, favorites, tags, feedback }` counts.
+  - Idempotent. It never writes to the local database.
+- CLI: `daily-diff import-local --email <email>`:
+  - Looks up the user id by email with the admin API, using the service key from the environment. The email is the one on the GitHub account used to sign in.
+  - Fails with "sign in once on the site first" when the user isn't found.
+  - Prints the counts.
+**Tests (write first, with in-memory stores):**
+- The counts.
+- Favorites keep their tags.
+- A second run changes nothing.
+- The local database file is byte-identical after a run.
+**Verify:** baseline, plus a manual check: import into the shared project and confirm that Favorites on the hosted site matches the local app.
+
+#### Step 42 — Retire unused local-app code (after M2 has been in use)
+**Files:** `src/server/*`, `src/web/api.ts`, `src/pipeline/split.ts`, `docs/daily-diff-architecture.md`.
+**Spec:**
+- Delete the Hono routes and the pages the hosted app no longer uses, and `src/web/api.ts`.
+- Keep the pipeline, the database, the packs and the CLI (`scrub`, `import-local`).
+- Remove the step 29 split if scrub mode makes it unreachable, along with its tests. List each removal in the commit body.
+- Add a short note to the architecture doc pointing to the design.
+**Verify:** baseline; `daily-diff scrub` still publishes against the local stack.
+
 ---
 
 ## Part D — Source pack contents (step 3)
@@ -710,7 +984,7 @@ Go through `docs/daily-diff-architecture.md` section by section and check each d
 
 ## Part E — Definition of done (v1)
 
-- Steps 0–30 are committed, with the baseline green and every manual check recorded in the step's commit message.
+- Steps 0–41 are committed (step 42 is later cleanup), with the baseline green and every manual check recorded in the step's commit message.
 - `docs/acceptance.md` has no gaps.
 - The README's cost and build-time numbers are measured, not estimated.
 - `docs/plan-issues.md` lists every deviation and mechanical adaptation, and the human has approved each one.
