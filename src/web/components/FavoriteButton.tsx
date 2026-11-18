@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, jsonBody } from '../api';
+import { useStore } from '../data/store';
 
-type Favorite = { tags: string[] } | null;
-
-export function FavoriteButton({ storyId, favorite, onChange }: { storyId: number; favorite: Favorite; onChange: (f: Favorite) => void }) {
+export function FavoriteButton({ storyKey }: { storyKey: string }) {
+  const store = useStore();
+  const favorite = store.favorite(storyKey) ?? null;
   const [open, setOpen] = useState(false);
   const [tags, setTags] = useState<string[]>(favorite?.tags ?? []);
   const [input, setInput] = useState('');
-  const [known, setKnown] = useState<string[]>([]);
   const [above, setAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -17,28 +16,25 @@ export function FavoriteButton({ storyId, favorite, onChange }: { storyId: numbe
     return () => document.removeEventListener('pointerdown', onDown);
   }, [open]);
 
-  const openPopover = async () => {
+  const openPopover = () => {
     setTags(favorite?.tags ?? []);
     // Open upward when there's no room below for the popover (~220px).
     setAbove((ref.current?.getBoundingClientRect().bottom ?? 0) + 240 > window.innerHeight);
     setOpen(true);
-    const res = await api.favorites.$get({ query: {} });
-    setKnown((await res.json()).tags.map((t) => t.tag));
   };
+  const known = [...new Set(store.state.favorites.flatMap((f) => f.tags))].sort();
   const addTag = (t: string) => {
     const tag = t.trim().toLowerCase();
     if (tag && !tags.includes(tag)) setTags([...tags, tag]);
     setInput('');
   };
-  const save = async () => {
+  const save = () => {
     const all = input.trim() ? [...new Set([...tags, input.trim().toLowerCase()])] : tags;
-    await api.favorites[':storyId'].$put({ param: { storyId: String(storyId) } }, jsonBody({ tags: all }));
-    onChange({ tags: all });
+    store.setFavorite(storyKey, all);
     setOpen(false);
   };
-  const remove = async () => {
-    await api.favorites[':storyId'].$delete({ param: { storyId: String(storyId) } });
-    onChange(null);
+  const remove = () => {
+    store.setFavorite(storyKey, null);
     setOpen(false);
   };
 

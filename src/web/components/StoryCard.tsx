@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { api, jsonBody, type StoryT } from '../api';
+import type { PublishedStory } from '../../shared/published.js';
+import { useStore } from '../data/store';
 import { TOPIC_LABEL, topicColor } from '../topics';
 import { FavoriteButton } from './FavoriteButton';
 
@@ -7,25 +8,27 @@ const ext = { target: '_blank', rel: 'noreferrer' } as const;
 const quiet = 'hover:text-neutral-900 dark:hover:text-neutral-100';
 
 /** A YouTube video among a story's links, so a video merged with an article stays reachable. */
+export type StoryT = PublishedStory;
+
 export const videoLink = (story: StoryT) => story.links.find((l) => /^https:\/\/(www\.)?youtube\.com\/watch\?/.test(l.url))?.url;
 
 /** Save · Discuss · Listen · Less like this, shared by every story layout. */
-export function Actions({ story, onFavoriteChange }: { story: StoryT; onFavoriteChange?: (f: StoryT['favorite']) => void }) {
-  const [favorite, setFavorite] = useState(story.favorite);
+export function Actions({ story }: { story: StoryT }) {
+  const store = useStore();
   const [noted, setNoted] = useState(false);
   const discussion = story.links.find((l) => l.discussionUrl)?.discussionUrl;
   const media = story.links.find((l) => l.mediaUrl)?.mediaUrl;
   const video = videoLink(story);
   return (
     <div className="mt-2 flex items-start gap-4 text-xs text-neutral-500">
-      <FavoriteButton storyId={story.id} favorite={favorite} onChange={(f) => { setFavorite(f); onFavoriteChange?.(f); }} />
+      <FavoriteButton storyKey={story.key} />
       {discussion && <a href={discussion} {...ext} className={quiet}>Discuss</a>}
       {video && video !== story.links[0]?.url && <a href={video} {...ext} className={quiet}>▶ Watch</a>}
       {media && <a href={media} {...ext} className={quiet}>Listen</a>}
       {noted ? (
         <span>Noted, you’ll see less like this</span>
       ) : (
-        <button className={quiet} onClick={async () => { await api.feedback.$post({}, jsonBody({ storyId: story.id, kind: 'less_like_this' })); setNoted(true); }}>Less like this</button>
+        <button className={quiet} onClick={() => { store.lessLikeThis(story); setNoted(true); }}>Less like this</button>
       )}
     </div>
   );
@@ -83,7 +86,8 @@ export function ModelDetails({ story }: { story: StoryT }) {
 const dayLabel = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 
 /** A story outside the front page (search hits, favorites), in the same calm style. */
-export function StoryCard({ story, date, onFavoriteChange }: { story: StoryT; date?: string; onFavoriteChange?: (f: StoryT['favorite']) => void }) {
+export function StoryCard({ story, date }: { story: StoryT; date?: string }) {
+  const favorite = useStore().favorite(story.key);
   const link = story.links[0];
   const color = topicColor(story.topic);
   return (
@@ -100,12 +104,12 @@ export function StoryCard({ story, date, onFavoriteChange }: { story: StoryT; da
       </h3>
       {story.summary && <p className="mt-1.5 text-neutral-600 dark:text-neutral-300">{story.summary}</p>}
       <ModelDetails story={story} />
-      {story.favorite && story.favorite.tags.length > 0 && (
+      {favorite && favorite.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
-          {story.favorite.tags.map((t) => <span key={t} className="rounded-full bg-neutral-200/70 px-2 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t}</span>)}
+          {favorite.tags.map((t) => <span key={t} className="rounded-full bg-neutral-200/70 px-2 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t}</span>)}
         </div>
       )}
-      <Actions story={story} onFavoriteChange={onFavoriteChange} />
+      <Actions story={story} />
     </article>
   );
 }

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { api, type Status } from './api';
+import { useEffect, useState } from 'react';
+import { StoreProvider, useStore } from './data/store';
 import { Archive } from './pages/Archive';
 import { Favorites } from './pages/Favorites';
 import { Onboarding } from './pages/Onboarding';
+import { Privacy } from './pages/Privacy';
 import { Settings } from './pages/Settings';
 import { Sources } from './pages/Sources';
 import { Today } from './pages/Today';
@@ -17,15 +18,16 @@ function useHash() {
   return hash.replace(/^#/, '') || '/';
 }
 
-type Route = { page: 'today' } | { page: 'digest'; date: string } | { page: 'archive' | 'favorites' | 'sources' | 'settings' | 'onboarding' };
+type Page = 'archive' | 'favorites' | 'sources' | 'settings' | 'onboarding' | 'privacy';
+type Route = { page: 'today' } | { page: 'digest'; date: string } | { page: Page };
+const PAGES: Page[] = ['archive', 'favorites', 'sources', 'settings', 'onboarding', 'privacy'];
 
 function match(path: string): Route | null {
   if (path === '/') return { page: 'today' };
   const d = path.match(/^\/d\/(\d{4}-\d{2}-\d{2})$/);
-  if (d) return { page: 'digest', date: d[1] };
-  const p = path.slice(1);
-  if (p === 'archive' || p === 'favorites' || p === 'sources' || p === 'settings' || p === 'onboarding') return { page: p };
-  return null;
+  if (d) return { page: 'digest', date: d[1]! };
+  const p = path.slice(1) as Page;
+  return PAGES.includes(p) ? { page: p } : null;
 }
 
 const NAV = [
@@ -36,53 +38,35 @@ const NAV = [
   ['#/settings', 'Settings'],
 ] as const;
 
-export function App() {
+function Shell() {
   const path = useHash();
-  const [status, setStatus] = useState<Status | null>(null);
-
-  const pollRef = useRef<() => Promise<void>>(async () => {});
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let stopped = false;
-    const poll = async () => {
-      clearTimeout(timer);
-      const s = await (await api.status.$get()).json();
-      if (stopped) return;
-      setStatus(s);
-      if (s.progress.running) timer = setTimeout(poll, 2000);
-    };
-    pollRef.current = poll;
-    api.ensure.$post().then(poll);
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-    };
-  }, []);
-
+  const { state } = useStore();
   const route = match(path);
-  // An archived digest (#/d/:date) belongs to Archive.
   const isCurrent = (href: string) => href === '#' + path || (href === '#/archive' && route?.page === 'digest');
+  // Until onboarding is finished, only Onboarding and Privacy are reachable (and nothing talks to the backend).
+  const gated = !state.onboarded && route?.page !== 'privacy';
   useEffect(() => {
-    if (status && !status.onboarded && route?.page !== 'onboarding') window.location.hash = '#/onboarding';
-  }, [status, route?.page]);
+    if (gated && route?.page !== 'onboarding') window.location.hash = '#/onboarding';
+  }, [gated, route?.page]);
 
   return (
     <div className="min-h-screen bg-paper text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      {route?.page !== 'onboarding' && <nav className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-3.5 gap-y-2 px-4 pt-6 text-[11px] uppercase tracking-[0.08em] sm:px-6 sm:text-xs sm:gap-x-6 sm:tracking-[0.18em]">
+      {!gated && <nav className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-3.5 gap-y-2 px-4 pt-6 text-[11px] uppercase tracking-[0.08em] sm:px-6 sm:text-xs sm:gap-x-6 sm:tracking-[0.18em]">
         {NAV.map(([href, label]) => (
           <a key={href} href={href} aria-current={isCurrent(href) ? 'page' : undefined} className={`transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 ${isCurrent(href) ? 'font-semibold text-neutral-900 dark:text-neutral-100' : 'text-neutral-500'}`}>
             {label}
           </a>
         ))}
       </nav>}
-      <main className="mx-auto max-w-3xl px-6 py-8 leading-relaxed">
+      <main className="mx-auto max-w-3xl px-4 py-8 leading-relaxed sm:px-6">
         {!route ? (
           <p>Not found.</p>
-        ) : !status ? null : route.page === 'today' ? (
-          <Today status={status} />
+        ) : gated ? (
+          <Onboarding onFinish={() => { window.location.hash = '#/'; }} />
+        ) : route.page === 'today' ? (
+          <Today />
         ) : route.page === 'digest' ? (
-          <Today status={status} date={route.date} />
+          <Today date={route.date} />
         ) : route.page === 'archive' ? (
           <Archive />
         ) : route.page === 'favorites' ? (
@@ -91,15 +75,20 @@ export function App() {
           <Sources />
         ) : route.page === 'settings' ? (
           <Settings />
+        ) : route.page === 'privacy' ? (
+          <Privacy />
         ) : (
-          <Onboarding
-            onFinish={async () => {
-              await pollRef.current();
-              window.location.hash = '#/';
-            }}
-          />
+          <Onboarding onFinish={() => { window.location.hash = '#/'; }} />
         )}
       </main>
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <StoreProvider>
+      <Shell />
+    </StoreProvider>
   );
 }

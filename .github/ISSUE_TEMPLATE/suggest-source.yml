@@ -1,0 +1,31 @@
+name: Suggest a source
+description: Suggest a blog, newsletter, podcast or channel for the morning scrub.
+title: "Source: "
+labels: [needs-triage]
+body:
+  - type: input
+    id: site
+    attributes:
+      label: Site URL
+      placeholder: https://example.com
+    validations:
+      required: true
+  - type: input
+    id: feed
+    attributes:
+      label: Feed URL (optional)
+      description: RSS or Atom, if you know it.
+  - type: dropdown
+    id: pack
+    attributes:
+      label: Which pack fits?
+      options: [AI News, Engineering, Headlines, Podcasts, Security, Tools, YouTube, Community, Not sure]
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it's worth reading
+      description: One or two sentences.
+    validations:
+      required: true

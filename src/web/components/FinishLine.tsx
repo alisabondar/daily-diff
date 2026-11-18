@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { Digest, ReadBody, Streak } from '../api';
-
-type Question = NonNullable<NonNullable<Digest['learn']>['concept']['quiz']>[number];
+import type { QuizQuestion as Question } from '../../shared/enums.js';
+import type { Streak } from '../../streak.js';
+import type { ReadBody } from '../data/store';
 
 export const streakText = (s: Streak) => (s.current > 0 ? `🔥 ${s.current}-day streak` : 'Start a streak today');
 

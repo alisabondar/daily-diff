@@ -14,6 +14,7 @@ const code = (p: string) => readFileSync(p, 'utf8').split('\n').filter((l) => !/
 const ALLOWED_HOSTS = new Set([
   'hn.algolia.com', 'news.ycombinator.com', // HN API + discussion links
   'raw.githubusercontent.com', // quick-start READMEs
+  'github.com', // Phase 8 step 38: the "Suggest a source" link (a link the user clicks, never fetched)
   'medium.com', 'www.youtube.com', // discovery rewrites of user-pasted URLs
   'openrouter.ai', 'localhost', // providers (OpenRouter, Ollama default)
   'www.googleapis.com', // YouTube Data API v3, only when YOUTUBE_API_KEY is set
