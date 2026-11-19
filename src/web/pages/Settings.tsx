@@ -32,21 +32,18 @@ export function Settings({ account }: { account?: ReactNode }) {
         </label>
       </section>
       <section className="space-y-2">
-        <h2 className="font-semibold">How picky is the front page?</h2>
-        <p className="text-sm text-neutral-500">
-          Each story gets a score from the scrub, plus 2 if it's on one of your topics and 1 if it mentions a keyword. The front page shows stories at or above this number, up to {FRONT_PAGE_MAX}.
-        </p>
+        <h2 className="font-semibold">Front page filter</h2>
         <div className="flex items-center gap-3">
           <input type="range" min={0} max={10} step={1} value={state.relevanceThreshold} onChange={(e) => set({ relevanceThreshold: Number(e.target.value) })} aria-label="Relevance threshold" className="w-full accent-neutral-700 dark:accent-neutral-300" />
           <span className="w-6 text-right font-semibold tabular-nums">{state.relevanceThreshold}</span>
         </div>
         <div className="flex justify-between text-xs text-neutral-500">
-          <span>0 · no filter, everything in your packs</span>
-          <span className="text-right">10 · only top stories that match your topics</span>
+          <span>0 · show everything</span>
+          <span className="text-right">10 · only strong matches</span>
         </div>
         {all && (
-          <p className="text-sm">
-            Today, <strong>{passing}</strong> of {all.length} stories pass{passing > FRONT_PAGE_MAX ? `, so the front page shows the top ${FRONT_PAGE_MAX}` : ''}. The rest are under <a href="#/all" className="underline decoration-neutral-400 underline-offset-2">All stories</a>.
+          <p className="text-sm text-neutral-500">
+            Today: {passing} of {all.length} stories pass{passing > FRONT_PAGE_MAX ? ` (top ${FRONT_PAGE_MAX} shown)` : ''}.
           </p>
         )}
       </section>
