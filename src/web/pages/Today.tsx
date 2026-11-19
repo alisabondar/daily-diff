@@ -19,7 +19,7 @@ function TopStory({ story, n }: { story: StoryT; n: number }) {
         <div className="text-2xl font-bold leading-none sm:text-3xl" style={{ color }}>{n}</div>
         {story.topic !== 'other' && <div className="font-semibold sm:mt-1" style={{ color }}>{TOPIC_LABEL[story.topic] ?? 'Other'}</div>}
         <div>{story.readMinutes} min</div>
-        {link && <div className="truncate">{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</div>}
+        {link && <div className="truncate sm:whitespace-normal">{link.sourceTitle}{story.links.length > 1 ? ` +${story.links.length - 1}` : ''}</div>}
       </div>
       <div>
         <h2 className="text-xl font-semibold leading-snug">
@@ -39,7 +39,7 @@ export function MoreItem({ story }: { story: StoryT }) {
   return (
     <li className="py-1.5">
       {link ? <a href={link.url} target="_blank" rel="noreferrer" className="font-semibold leading-snug hover:underline">{story.title}</a> : <span className="font-semibold">{story.title}</span>}
-      <div className="mt-0.5 flex items-start gap-3 text-xs text-neutral-500">
+      <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs text-neutral-500">
         <span>{link?.sourceTitle} · {story.readMinutes} min</span>
         {video && video !== link?.url && <a href={video} target="_blank" rel="noreferrer" className="hover:text-neutral-900 dark:hover:text-neutral-100">▶ Watch</a>}
         <FavoriteButton storyKey={story.key} />
@@ -89,7 +89,7 @@ export function Today({ date }: { date?: string }) {
     <div>
       {error && <p className="text-neutral-500">Couldn’t load the digest: {error}</p>}
       {latest === null && !date && <p className="text-neutral-500">No digest has been published yet. The first one goes out at about 5:30am ET.</p>}
-      {missing && <p className="text-neutral-500">No digest for {shown}.</p>}
+      {missing && shown && <p className="py-10 text-center text-neutral-500">No digest for {new Date(`${shown}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. <a href="#/archive" className="underline underline-offset-2">See the archive</a></p>}
       {scrub && (
         <>
           <header className="border-b border-neutral-400 pb-3 text-center">

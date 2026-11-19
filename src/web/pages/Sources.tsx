@@ -20,11 +20,14 @@ export function Sources() {
 
   return (
     <div className="space-y-8">
+      <div className="space-y-2">
+      <h1 className="text-2xl font-semibold tracking-tight">Sources</h1>
       <p className="text-sm text-neutral-500">
-        Every source below is read each morning. Turn off what you don’t want in your view.{' '}
+        Every source below is read each morning. Turn off anything you don’t want to see.{' '}
         <a href={suggestUrl} target="_blank" rel="noreferrer" className="underline decoration-neutral-400 underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100">Suggest a source</a>
-        {' '}or open a pull request adding it to <code className="text-xs">src/packs</code>.
+.
       </p>
+      </div>
       {PACKS.map((p) => {
         const rows = catalog.filter((c) => c.pack === p.id);
         if (rows.length === 0) return null;

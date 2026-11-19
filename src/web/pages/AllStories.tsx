@@ -21,7 +21,7 @@ export function AllStories({ date }: { date?: string }) {
       {scrub && (
         <>
           <header className="mt-4 border-b border-neutral-400 pb-3">
-            <h1 className="text-3xl font-semibold tracking-tight">All stories</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">All stories</h1>
             <p className="mt-1 text-sm text-neutral-500">{day} · {all.length} in your packs, highest ranked first, including those below your relevance threshold</p>
           </header>
           <div className="mt-4 space-y-6">

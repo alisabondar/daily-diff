@@ -33,6 +33,7 @@ export function Archive() {
 
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Archive</h1>
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -53,10 +54,11 @@ export function Archive() {
       ) : (
         <>
           <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
-            {days?.map((d) => (
+            {days?.map((d, i) => (
               <li key={d}>
                 <a href={`#/d/${d}`} className="group flex items-baseline justify-between gap-4 py-3">
                   <span className="group-hover:underline">{longDay(d)}</span>
+                  {i === 0 && <span className="text-xs text-neutral-500">Latest</span>}
                 </a>
               </li>
             ))}

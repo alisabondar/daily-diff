@@ -41,7 +41,7 @@ export function FavoriteButton({ storyKey }: { storyKey: string }) {
   const suggestions = known.filter((t) => !tags.includes(t) && t.startsWith(input.trim().toLowerCase()));
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => (open ? setOpen(false) : openPopover())} aria-expanded={open} className={favorite ? 'text-neutral-900 dark:text-neutral-100' : 'hover:text-neutral-900 dark:hover:text-neutral-100'}>
+      <button onClick={() => (open ? setOpen(false) : openPopover())} aria-expanded={open} className={'whitespace-nowrap ' + (favorite ? 'text-neutral-900 dark:text-neutral-100' : 'hover:text-neutral-900 dark:hover:text-neutral-100')}>
         {favorite ? '★ Saved' : '☆ Save'}
       </button>
       {open && (

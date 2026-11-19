@@ -48,7 +48,9 @@ function Shell() {
   const path = useHash();
   const { state } = useStore();
   const route = match(path);
-  const isCurrent = (href: string) => href === '#' + path || (href === '#/archive' && route?.page === 'digest');
+  const isCurrent = (href: string) => href === '#' + path
+    || (href === '#/archive' && (route?.page === 'digest' || (route?.page === 'all' && !!route.date)))
+    || (href === '#/' && route?.page === 'all' && !route.date);
   // Until onboarding is finished, only Onboarding and Privacy are reachable (and nothing talks to the backend).
   const gated = !state.onboarded && route?.page !== 'privacy';
   useEffect(() => {
