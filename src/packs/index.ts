@@ -5,6 +5,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db } from '../db/client.js';
 import { SourceKind, SourceType, sources } from '../db/schema.js';
+import { TOPICS } from '../shared/enums.js';
 
 export const PackSource = z.object({
   title: z.string().min(1),
@@ -21,6 +22,8 @@ export const Pack = z.object({
   name: z.string().min(1),
   emoji: z.string(),
   defaultEnabled: z.boolean(),
+  /** Onboarding pre-ticks this pack when the user picks one of these topics (none: a mixed-format pack). */
+  topics: z.array(z.enum(TOPICS)).default([]),
   sources: z.array(PackSource),
 });
 export type Pack = z.infer<typeof Pack>;

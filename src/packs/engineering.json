@@ -3,6 +3,10 @@
   "name": "Engineering",
   "emoji": "⚙️",
   "defaultEnabled": true,
+  "topics": [
+    "dev-tools",
+    "infra"
+  ],
   "sources": [
     {
       "title": "The Pragmatic Engineer",

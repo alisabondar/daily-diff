@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Topic } from '../../shared/enums.js';
 import { KeywordInput, TopicPicker, primary } from '../components/Preferences';
+import { defaultPacksFor } from '../data/pack-defaults';
 import { PACKS } from '../data/packs';
 import { useStore } from '../data/store';
 
@@ -12,7 +13,13 @@ export function Onboarding({ onFinish, signIn }: { onFinish: () => void; signIn?
   const [step, setStep] = useState(0);
   const [topics, setTopics] = useState<Topic[]>(store.state.topics);
   const [keywords, setKeywords] = useState<string[]>(store.state.keywords);
-  const [chosen, setChosen] = useState<string[]>(store.state.packs.length ? store.state.packs : PACKS.filter((p) => p.defaultEnabled).map((p) => p.id));
+  const [chosen, setChosen] = useState<string[]>(store.state.packs);
+  // Packs follow the topics until the user ticks a pack themselves.
+  const [packsTouched, setPacksTouched] = useState(store.state.packs.length > 0);
+  const toPacks = () => {
+    if (!packsTouched) setChosen(defaultPacksFor(PACKS, topics));
+    setStep(1);
+  };
 
   const finish = () => {
     store.update((s) => ({ ...s, topics, keywords, packs: chosen, onboarded: true }), { settings: true });
@@ -40,17 +47,18 @@ export function Onboarding({ onFinish, signIn }: { onFinish: () => void; signIn?
             <h2 className="font-semibold">Keywords <span className="font-normal text-neutral-500">(optional)</span></h2>
             <KeywordInput value={keywords} onChange={setKeywords} />
           </div>
-          <button onClick={() => setStep(1)} className={primary}>Next</button>
+          <button onClick={toPacks} className={primary}>Next</button>
         </section>
       )}
 
       {step === 1 && (
         <section className="space-y-4">
+          <p className="text-sm text-neutral-500">Picked for your topics. Change any of them.</p>
           <ul className="space-y-2">
             {PACKS.map((p) => (
               <li key={p.id}>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={chosen.includes(p.id)} onChange={(e) => setChosen(e.target.checked ? [...chosen, p.id] : chosen.filter((x) => x !== p.id))} />
+                  <input type="checkbox" checked={chosen.includes(p.id)} onChange={(e) => { setPacksTouched(true); setChosen(e.target.checked ? [...chosen, p.id] : chosen.filter((x) => x !== p.id)); }} />
                   {p.emoji} {p.name} <span className="text-sm text-neutral-500">· {p.sourceCount} sources</span>
                 </label>
               </li>

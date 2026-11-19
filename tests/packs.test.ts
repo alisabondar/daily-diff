@@ -16,14 +16,14 @@ beforeEach(() => {
 
 const packs: Pack[] = [
   {
-    id: 'a', name: 'A', emoji: 'a', defaultEnabled: true,
+    id: 'a', name: 'A', emoji: 'a', defaultEnabled: true, topics: [],
     sources: [
       { title: 'A1', url: 'https://a1.dev', feedUrl: 'https://a1.dev/feed', kind: 'rss', type: 'blog' },
       { title: 'A2', url: 'https://a2.dev', feedUrl: 'https://a2.dev/feed', kind: 'rss', type: 'news', defaultEnabled: false },
     ],
   },
   {
-    id: 'b', name: 'B', emoji: 'b', defaultEnabled: false,
+    id: 'b', name: 'B', emoji: 'b', defaultEnabled: false, topics: [],
     sources: [{ title: 'HN', url: 'https://news.ycombinator.com', feedUrl: 'hn:front_page', kind: 'hn', type: 'community', hnTags: 'front_page', defaultEnabled: true }],
   },
 ];

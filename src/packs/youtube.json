@@ -3,6 +3,7 @@
   "name": "YouTube",
   "emoji": "🎬",
   "defaultEnabled": false,
+  "topics": [],
   "sources": [
     {
       "title": "Anthropic",

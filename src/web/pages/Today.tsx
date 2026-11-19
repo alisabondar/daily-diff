@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import type { PublishedScrub } from '../../shared/published.js';
+import { useEffect, useRef } from 'react';
 import { FinishLine, streakText } from '../components/FinishLine';
 import { FavoriteButton } from '../components/FavoriteButton';
 import { Actions, ModelDetails, videoLink, type StoryT } from '../components/StoryCard';
 import { LearnSection, learnOf } from '../components/LearnSection';
-import { rankView } from '../data/rank';
+import { rankAll, rankView } from '../data/rank';
+import { useDay } from '../data/use-day';
 import { useStore } from '../data/store';
 import { TOPIC_LABEL, TOPIC_ORDER, topicColor } from '../topics';
 
@@ -33,7 +33,7 @@ function TopStory({ story, n }: { story: StoryT; n: number }) {
   );
 }
 
-function MoreItem({ story }: { story: StoryT }) {
+export function MoreItem({ story }: { story: StoryT }) {
   const link = story.links[0];
   const video = videoLink(story);
   return (
@@ -51,27 +51,11 @@ function MoreItem({ story }: { story: StoryT }) {
 // `date` set: an archived day (#/d/:date). Unset: the latest published scrub.
 export function Today({ date }: { date?: string }) {
   const store = useStore();
-  const { reader, state } = store;
-  const [latest, setLatest] = useState<string | null | undefined>(undefined);
-  const [scrub, setScrub] = useState<PublishedScrub | null>(null);
-  const [missing, setMissing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { state } = store;
+  const { latest, shown, scrub, missing, error } = useDay(date);
   const end = useRef<HTMLParagraphElement>(null);
-
-  useEffect(() => {
-    if (!reader || date) return;
-    reader.dates().then((d) => setLatest(d[0] ?? null), (e: Error) => setError(e.message));
-  }, [reader, date]);
-  const shown = date ?? latest ?? null;
   // Reading counts toward the streak only on the latest scrub (step 26).
   const isToday = !date && !!shown;
-
-  useEffect(() => {
-    setScrub(null);
-    setMissing(false);
-    if (!reader || !shown) return;
-    reader.day(shown).then((s) => (s ? setScrub(s) : setMissing(true)), (e: Error) => setError(e.message));
-  }, [reader, shown]);
 
   const view = scrub ? rankView(scrub.stories, state) : null;
   const highlights = view ? view.highlights.flatMap((g) => g.stories) : [];
@@ -79,6 +63,8 @@ export function Today({ date }: { date?: string }) {
   const rest = view ? [...highlights.slice(3), ...view.more.flatMap((g) => g.stories)] : [];
   const groups = TOPIC_ORDER.map((t) => ({ key: t, label: TOPIC_LABEL[t]!, color: topicColor(t), stories: rest.filter((s) => s.topic === t) }));
   const all = [...top, ...rest];
+  const total = scrub ? rankAll(scrub.stories, state).length : 0;
+  const allHref = date ? `#/d/${date}/all` : '#/all';
   const releases = all.filter((s) => s.category === 'model').length;
   const since = scrub ? new Date(scrub.windowStart).toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase() : '';
   const learn = scrub ? learnOf(scrub.learn) : null;
@@ -129,6 +115,9 @@ export function Today({ date }: { date?: string }) {
                 ))}
               </div>
             </section>
+          )}
+          {total > all.length && (
+            <p className="mt-6 text-center text-sm"><a href={allHref} className="text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline dark:hover:text-neutral-100">Browse all {total} stories in your packs →</a></p>
           )}
           {learn && <LearnSection learn={learn} />}
           {learn?.concept.quiz?.length ? <FinishLine quiz={learn.concept.quiz} concept={learn.concept.title} record={isToday && shown ? (b) => store.recordRead(shown, b) : null} streak={streak} /> : null}

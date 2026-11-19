@@ -19,14 +19,21 @@ export function rankOf(story: PublishedStory, s: ViewSettings): number {
   return story.score + topic + keyword - less;
 }
 
-/** One viewer's filtered and ranked view of a day's scrub (Phase 8, step 37). */
-export function rankView(stories: PublishedStory[], s: ViewSettings): View {
+/** The front page shows at most this many stories; the rest are on the All stories page. */
+export const FRONT_PAGE_MAX = 30;
+
+/** Every story in the viewer's packs and enabled sources, ranked, ignoring the relevance threshold (the All stories page). */
+export function rankAll(stories: PublishedStory[], s: ViewSettings): RankedStory[] {
   const disabled = new Set(s.disabledSources);
-  const ranked = stories
+  return stories
     .filter((x) => x.pack !== null && s.packs.includes(x.pack) && x.sourceKeys.some((k) => !disabled.has(k)))
     .map((x): RankedStory => ({ ...x, rank: rankOf(x, s) }))
-    .filter((x) => x.rank >= s.relevanceThreshold)
     .sort((a, b) => b.rank - a.rank || b.score - a.score || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+}
+
+/** One viewer's filtered and ranked view of a day's scrub (Phase 8, step 37). */
+export function rankView(stories: PublishedStory[], s: ViewSettings): View {
+  const ranked = rankAll(stories, s).filter((x) => x.rank >= s.relevanceThreshold).slice(0, FRONT_PAGE_MAX);
 
   const picked = new Set(ranked.filter((x) => x.category && HIGHLIGHT_SECTION_FOR[x.category]).slice(0, s.highlightsCap).map((x) => x.key));
   const highlights = HIGHLIGHT_SECTIONS.map((section) => ({

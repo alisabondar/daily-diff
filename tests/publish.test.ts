@@ -39,8 +39,8 @@ class MemoryStore implements ScrubStore {
 }
 
 const PACKS: Pack[] = [
-  { id: 'eng', name: 'Eng', emoji: 'x', defaultEnabled: false, sources: [{ title: 'Blog', url: 'https://blog.dev', feedUrl: 'https://blog.dev/feed', kind: 'rss', type: 'blog' }] },
-  { id: 'community', name: 'C', emoji: 'y', defaultEnabled: false, sources: [{ title: 'Reddit', url: 'https://www.reddit.com/r/x', feedUrl: 'https://www.reddit.com/r/x/top/.rss?t=day', kind: 'rss', type: 'community' }] },
+  { id: 'eng', name: 'Eng', emoji: 'x', defaultEnabled: false, topics: [], sources: [{ title: 'Blog', url: 'https://blog.dev', feedUrl: 'https://blog.dev/feed', kind: 'rss', type: 'blog' }] },
+  { id: 'community', name: 'C', emoji: 'y', defaultEnabled: false, topics: [], sources: [{ title: 'Reddit', url: 'https://www.reddit.com/r/x', feedUrl: 'https://www.reddit.com/r/x/top/.rss?t=day', kind: 'rss', type: 'community' }] },
 ];
 const fetchFn = () => fakeFetch({ 'https://blog.dev/feed': fixture('feeds/blog-rss2.xml'), 'https://www.reddit.com/*': fixture('feeds/reddit.xml') });
 const config = Config.parse({ onboarded: true, provider: 'anthropic' });

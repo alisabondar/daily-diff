@@ -1,0 +1,39 @@
+{
+  "id": "infra",
+  "name": "Infra & Data",
+  "emoji": "🏗️",
+  "defaultEnabled": false,
+  "topics": [
+    "infra"
+  ],
+  "sources": [
+    {
+      "title": "AWS Architecture Blog",
+      "url": "https://aws.amazon.com/blogs/architecture/",
+      "feedUrl": "https://aws.amazon.com/blogs/architecture/feed/",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Kubernetes Blog",
+      "url": "https://kubernetes.io/blog/",
+      "feedUrl": "https://kubernetes.io/feed.xml",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Postgres Weekly",
+      "url": "https://postgresweekly.com",
+      "feedUrl": "https://postgresweekly.com/rss/",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "Fly.io Blog",
+      "url": "https://fly.io/blog/",
+      "feedUrl": "https://fly.io/blog/feed.xml",
+      "kind": "rss",
+      "type": "blog"
+    }
+  ]
+}

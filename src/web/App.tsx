@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AccountPanel, DeleteAccount, SignInLink } from './components/Account';
 import { AccountProvider } from './data/account';
 import { StoreProvider, useStore } from './data/store';
+import { AllStories } from './pages/AllStories';
 import { Archive } from './pages/Archive';
 import { Favorites } from './pages/Favorites';
 import { Onboarding } from './pages/Onboarding';
@@ -21,11 +22,14 @@ function useHash() {
 }
 
 type Page = 'archive' | 'favorites' | 'sources' | 'settings' | 'onboarding' | 'privacy';
-type Route = { page: 'today' } | { page: 'digest'; date: string } | { page: Page };
+type Route = { page: 'today' } | { page: 'digest'; date: string } | { page: 'all'; date?: string } | { page: Page };
 const PAGES: Page[] = ['archive', 'favorites', 'sources', 'settings', 'onboarding', 'privacy'];
 
 function match(path: string): Route | null {
   if (path === '/') return { page: 'today' };
+  if (path === '/all') return { page: 'all' };
+  const a = path.match(/^\/d\/(\d{4}-\d{2}-\d{2})\/all$/);
+  if (a) return { page: 'all', date: a[1]! };
   const d = path.match(/^\/d\/(\d{4}-\d{2}-\d{2})$/);
   if (d) return { page: 'digest', date: d[1]! };
   const p = path.slice(1) as Page;
@@ -69,6 +73,8 @@ function Shell() {
           <Today />
         ) : route.page === 'digest' ? (
           <Today date={route.date} />
+        ) : route.page === 'all' ? (
+          <AllStories date={route.date} />
         ) : route.page === 'archive' ? (
           <Archive />
         ) : route.page === 'favorites' ? (

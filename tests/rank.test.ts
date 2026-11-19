@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type { PublishedStory } from '../src/shared/published.js';
-import { rankOf, rankView, type ViewSettings } from '../src/web/data/rank.js';
+import { FRONT_PAGE_MAX, rankAll, rankOf, rankView, type ViewSettings } from '../src/web/data/rank.js';
 
 let n = 0;
 const story = (over: Partial<PublishedStory> = {}): PublishedStory => {
@@ -85,4 +85,23 @@ test('empty settings (no topics or keywords) still produce a view; no packs give
   const s = story({ score: 7 });
   expect(keysOf(rankView([s], settings()))).toEqual([s.key]);
   expect(rankView([s], settings({ packs: [] }))).toEqual({ highlights: [], more: [] });
+});
+
+test('the front page holds at most FRONT_PAGE_MAX stories, keeping the highest ranked', () => {
+  const many = Array.from({ length: FRONT_PAGE_MAX + 10 }, (_, i) => story({ score: 5 + (i % 5), category: i % 2 ? 'tool' : 'long-read' }));
+  const shown = keysOf(rankView(many, settings()));
+  expect(shown).toHaveLength(FRONT_PAGE_MAX);
+  const lowestShown = Math.min(...many.filter((x) => shown.includes(x.key)).map((x) => x.score));
+  const highestHidden = Math.max(...many.filter((x) => !shown.includes(x.key)).map((x) => x.score));
+  expect(lowestShown).toBeGreaterThanOrEqual(highestHidden);
+});
+
+test('rankAll ignores the threshold and the cap, keeps the pack and source filters, sorted by rank', () => {
+  const low = story({ score: 1 });
+  const high = story({ score: 9 });
+  const offPack = story({ score: 9, pack: 'security' });
+  const disabled = story({ score: 9, sourceKeys: ['bad'] });
+  const all = rankAll([low, high, offPack, disabled], settings({ relevanceThreshold: 8, disabledSources: ['bad'] }));
+  expect(all.map((x) => x.key)).toEqual([high.key, low.key]);
+  expect(all[1]!.rank).toBe(1);
 });

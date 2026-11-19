@@ -13,3 +13,9 @@
   - `feedback` copies the story's `topic` and `source_key`, so "Less like this" still down-ranks on later days.
   - Section enums moved to `src/shared/enums.ts` and the published types to `src/shared/published.ts`, so the browser imports them without Drizzle or `node:crypto`. `schema.ts` and `publish-shape.ts` re-export them.
   - Day caching is a `cachedDays(reader, storage)` wrapper over a `DayReader` interface; that's testable without a fake Supabase client.
+
+## Phase 8 follow-up (user-approved, 2026-11-18): more sources, topic-based pack defaults, front-page cap
+
+- **Sources:** 10 feeds added, each verified live first. Security gets The Hacker News, Google Project Zero and PortSwigger Research. Two new packs start off: Research (Google Research, Sebastian Raschka, BAIR) and Infra & Data (AWS Architecture, Kubernetes, Postgres Weekly, Fly.io). Anthropic News has no RSS feed (404), and the Hugging Face Daily Papers RSS feed needs a login (401), so neither was added.
+- **Pack topics:** packs carry `topics`. On onboarding's Packs step, the app pre-ticks the packs on the topics the user picked, plus default-on packs that have no topic. With no topics picked, it falls back to `defaultEnabled`. Once the user ticks a pack themselves, the topic picks stop changing the selection.
+- **Front page cap:** the front page shows at most `FRONT_PAGE_MAX` = 30 stories at or above the threshold. `#/all` (and `#/d/:date/all`) lists every story in the user's packs, ranked and grouped by topic, ignoring the threshold.

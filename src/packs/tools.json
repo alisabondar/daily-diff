@@ -3,6 +3,9 @@
   "name": "Tools & Launches",
   "emoji": "🛠",
   "defaultEnabled": true,
+  "topics": [
+    "dev-tools"
+  ],
   "sources": [
     {
       "title": "Show HN",

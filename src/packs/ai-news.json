@@ -3,6 +3,9 @@
   "name": "AI News",
   "emoji": "🧠",
   "defaultEnabled": true,
+  "topics": [
+    "ai"
+  ],
   "sources": [
     {
       "title": "Simon Willison",

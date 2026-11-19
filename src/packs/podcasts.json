@@ -1,8 +1,9 @@
 {
   "id": "podcasts",
   "name": "Podcasts",
-  "emoji": "\ud83c\udfa7",
+  "emoji": "🎧",
   "defaultEnabled": true,
+  "topics": [],
   "sources": [
     {
       "title": "Lenny's Podcast",

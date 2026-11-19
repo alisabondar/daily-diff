@@ -1,0 +1,32 @@
+{
+  "id": "research",
+  "name": "Research",
+  "emoji": "🔬",
+  "defaultEnabled": false,
+  "topics": [
+    "research"
+  ],
+  "sources": [
+    {
+      "title": "Google Research Blog",
+      "url": "https://research.google/blog/",
+      "feedUrl": "https://research.google/blog/rss/",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "Sebastian Raschka (Ahead of AI)",
+      "url": "https://magazine.sebastianraschka.com",
+      "feedUrl": "https://magazine.sebastianraschka.com/feed",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "BAIR Blog",
+      "url": "https://bair.berkeley.edu/blog/",
+      "feedUrl": "https://bair.berkeley.edu/blog/feed.xml",
+      "kind": "rss",
+      "type": "blog"
+    }
+  ]
+}

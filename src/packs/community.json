@@ -1,8 +1,9 @@
 {
   "id": "community",
   "name": "Community",
-  "emoji": "\ud83c\udf10",
+  "emoji": "🌐",
   "defaultEnabled": true,
+  "topics": [],
   "sources": [
     {
       "title": "Hacker News front page",

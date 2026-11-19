@@ -1,8 +1,11 @@
 {
   "id": "security",
   "name": "Security",
-  "emoji": "\ud83d\udd10",
+  "emoji": "🔐",
   "defaultEnabled": true,
+  "topics": [
+    "security"
+  ],
   "sources": [
     {
       "title": "Embrace The Red",
@@ -35,6 +38,27 @@
       "kind": "rss",
       "type": "blog",
       "defaultEnabled": true
+    },
+    {
+      "title": "The Hacker News",
+      "url": "https://thehackernews.com",
+      "feedUrl": "https://feeds.feedburner.com/TheHackersNews",
+      "kind": "rss",
+      "type": "news"
+    },
+    {
+      "title": "Google Project Zero",
+      "url": "https://googleprojectzero.blogspot.com",
+      "feedUrl": "https://googleprojectzero.blogspot.com/feeds/posts/default",
+      "kind": "rss",
+      "type": "blog"
+    },
+    {
+      "title": "PortSwigger Research",
+      "url": "https://portswigger.net/research",
+      "feedUrl": "https://portswigger.net/research/rss",
+      "kind": "rss",
+      "type": "blog"
     }
   ]
 }

@@ -3,6 +3,9 @@
   "name": "Tech Headlines",
   "emoji": "📰",
   "defaultEnabled": true,
+  "topics": [
+    "industry"
+  ],
   "sources": [
     {
       "title": "Ars Technica",
