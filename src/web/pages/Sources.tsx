@@ -38,10 +38,10 @@ export function Sources() {
               <input type="checkbox" checked={on} onChange={(e) => togglePack(p.id, e.target.checked)} />
               {p.emoji} {p.name}
             </label>
-            <ul className={`space-y-1 pl-6 text-sm ${on ? '' : 'opacity-50'}`}>
+            <ul className={`pl-6 text-sm ${on ? '' : 'opacity-50'}`}>
               {rows.map((r) => (
                 <li key={r.key}>
-                  <label className="flex items-baseline gap-2">
+                  <label className="flex items-baseline gap-2 py-1">
                     <input type="checkbox" disabled={!on} checked={!disabled.has(r.key)} onChange={(e) => toggleSource(r.key, e.target.checked)} />
                     <span>{r.title}</span>
                     <a href={r.url} target="_blank" rel="noreferrer" className="truncate text-xs text-neutral-500 hover:underline">{r.url.replace(/^https:\/\/(www\.)?/, '')}</a>

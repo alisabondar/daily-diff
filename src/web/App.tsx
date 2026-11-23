@@ -91,6 +91,9 @@ function Shell() {
           <Onboarding onFinish={() => { window.location.hash = '#/'; }} />
         )}
       </main>
+      <footer className="mx-auto max-w-3xl px-4 pb-8 text-center text-xs text-neutral-500 sm:px-6">
+        <p className="border-t border-neutral-200 pt-6 dark:border-neutral-800">© {new Date().getFullYear()} The Daily Diff · <a href="#/privacy" className="underline decoration-neutral-400 underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100">Privacy</a></p>
+      </footer>
     </div>
   );
 }
