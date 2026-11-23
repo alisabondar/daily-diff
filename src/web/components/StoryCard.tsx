@@ -102,7 +102,7 @@ export function StoryCard({ story, date }: { story: StoryT; date?: string }) {
       <h3 className="mt-1 text-lg font-semibold leading-snug">
         {link ? <a href={link.url} {...ext} className="hover:underline">{story.title}</a> : story.title}
       </h3>
-      {story.summary && <p className="mt-1.5 text-neutral-600 dark:text-neutral-300">{story.summary}</p>}
+      {story.summary && <p className="mt-1.5 text-[1.0625rem] leading-relaxed text-neutral-600 dark:text-neutral-300">{story.summary}</p>}
       <ModelDetails story={story} />
       {favorite && favorite.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">

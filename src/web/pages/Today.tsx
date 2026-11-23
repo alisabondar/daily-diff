@@ -10,6 +10,14 @@ import { TOPIC_LABEL, TOPIC_ORDER, topicColor } from '../topics';
 
 // "Calm" front page (from /fmk, design G): numbered top 3 with margin notes, then everything else by topic.
 
+/** The tagline follows the reader's clock: "a calm morning read" before noon, and so on. */
+function partOfDay(hour: number): string {
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 22) return 'evening';
+  return 'late-night';
+}
+
 function TopStory({ story, n }: { story: StoryT; n: number }) {
   const color = topicColor(story.topic);
   const link = story.links[0];
@@ -25,7 +33,7 @@ function TopStory({ story, n }: { story: StoryT; n: number }) {
         <h2 className="text-xl font-semibold leading-snug">
           {link ? <a href={link.url} target="_blank" rel="noreferrer" className="hover:underline">{story.title}</a> : story.title}
         </h2>
-        {story.summary && <p className="mt-1.5 text-neutral-600 dark:text-neutral-300">{story.summary}</p>}
+        {story.summary && <p className="mt-1.5 text-[1.0625rem] leading-relaxed text-neutral-600 dark:text-neutral-300">{story.summary}</p>}
         <ModelDetails story={story} />
         <Actions story={story} />
       </div>
@@ -95,7 +103,7 @@ export function Today({ date }: { date?: string }) {
           <header className="border-b border-neutral-400 pb-3 text-center">
             <h1 className="inline-flex items-center gap-3 text-4xl font-semibold tracking-tight"><img src="favicon.svg" alt="" className="h-[0.8em] w-[0.8em]" />The Daily Diff</h1>
             <p className="mt-1 text-sm text-neutral-500">
-              {['a calm morning read', day, `${all.length} ${all.length === 1 ? 'story' : 'stories'} since ${since}`, ...(releases ? [`${releases} model ${releases === 1 ? 'release' : 'releases'}`] : []), `${minutes} min`].map((part, i) => (
+              {[`a calm ${partOfDay(new Date().getHours())} read`, day, `${all.length} ${all.length === 1 ? 'story' : 'stories'} since ${since}`, ...(releases ? [`${releases} model ${releases === 1 ? 'release' : 'releases'}`] : []), `${minutes} min`].map((part, i) => (
                 <span key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{part}</span></span>
               ))}
             </p>
