@@ -58,15 +58,17 @@ function Shell() {
   }, [gated, route?.page]);
 
   return (
-    <div className="min-h-screen bg-paper text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      {!gated && <nav className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-3.5 gap-y-2 px-4 pt-6 text-[11px] uppercase tracking-[0.08em] sm:px-6 sm:text-xs sm:gap-x-6 sm:tracking-[0.18em]">
-        {NAV.map(([href, label]) => (
+    <div className="flex min-h-screen flex-col bg-paper text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <nav aria-disabled={gated || undefined} className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-3.5 gap-y-2 px-4 pt-6 text-[11px] uppercase tracking-[0.08em] sm:px-6 sm:text-xs sm:gap-x-6 sm:tracking-[0.18em]">
+        {NAV.map(([href, label]) => gated ? (
+          <span key={href} className="text-neutral-400 dark:text-neutral-600">{label}</span>
+        ) : (
           <a key={href} href={href} aria-current={isCurrent(href) ? 'page' : undefined} className={`transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 ${isCurrent(href) ? 'font-semibold text-neutral-900 dark:text-neutral-100' : 'text-neutral-500'}`}>
             {label}
           </a>
         ))}
-      </nav>}
-      <main className="mx-auto max-w-3xl px-4 py-8 leading-relaxed sm:px-6">
+      </nav>
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 leading-relaxed sm:px-6">
         {!route ? (
           <p>Not found.</p>
         ) : gated ? (
@@ -91,7 +93,7 @@ function Shell() {
           <Onboarding onFinish={() => { window.location.hash = '#/'; }} />
         )}
       </main>
-      <footer className="mx-auto max-w-3xl px-4 pb-8 text-center text-xs text-neutral-500 sm:px-6">
+      <footer className="mx-auto w-full max-w-3xl px-4 pb-8 text-center text-xs text-neutral-500 sm:px-6">
         <p className="border-t border-neutral-200 pt-6 dark:border-neutral-800">© {new Date().getFullYear()} The Daily Diff · <a href="#/privacy" className="underline decoration-neutral-400 underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100">Privacy</a></p>
       </footer>
     </div>

@@ -27,8 +27,8 @@ export function Onboarding({ onFinish, signIn }: { onFinish: () => void; signIn?
   };
 
   return (
-    <div className="mx-auto max-w-xl space-y-8">
-      <h1 className="pt-6 text-3xl font-semibold tracking-tight">Welcome to The Daily Diff</h1>
+    <div className="mx-auto max-w-xl space-y-8 rounded-xl border border-neutral-200 px-5 py-8 sm:px-8 dark:border-neutral-800">
+      <h1 className="text-3xl font-semibold tracking-tight">Welcome to The Daily Diff</h1>
       <p className="text-sm text-neutral-500">One morning scrub of AI and engineering news, filtered for you. Your choices stay on this device unless you sign in to sync.</p>
       <ol className="flex gap-6 text-sm">
         {STEPS.map((s, i) => (
