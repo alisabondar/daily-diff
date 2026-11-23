@@ -19,3 +19,9 @@
 - **Sources:** 10 feeds added, each verified live first. Security gets The Hacker News, Google Project Zero and PortSwigger Research. Two new packs start off: Research (Google Research, Sebastian Raschka, BAIR) and Infra & Data (AWS Architecture, Kubernetes, Postgres Weekly, Fly.io). Anthropic News has no RSS feed (404), and the Hugging Face Daily Papers RSS feed needs a login (401), so neither was added.
 - **Pack topics:** packs carry `topics`. On onboarding's Packs step, the app pre-ticks the packs on the topics the user picked, plus default-on packs that have no topic. With no topics picked, it falls back to `defaultEnabled`. Once the user ticks a pack themselves, the topic picks stop changing the selection.
 - **Front page cap:** the front page shows at most `FRONT_PAGE_MAX` = 30 stories at or above the threshold. `#/all` (and `#/d/:date/all`) lists every story in the user's packs, ranked and grouped by topic, ignoring the threshold.
+
+## Settings redesign (user-approved, 2026-11-23): grouped rows and a named front-page filter
+
+- **Layout:** Settings now uses grouped boxes, like Linear's preferences. The groups are Sync, Interests (Topics, Keywords), Front page (Highlights, Filter) and Less like this.
+- **Filter levels:** Off, Light, Balanced and Strict set `relevanceThreshold` to 0, 3, 5 and 7. The stored field is still the 0–10 integer and ranking is unchanged. A saved value between two levels keeps working, and the control highlights the highest level at or below it. Values 1, 2, 4, 6 and 8–10 can no longer be picked from the UI.
+- **Tagline:** "a calm morning read" follows the browser's local hour: morning, afternoon, evening or late-night.

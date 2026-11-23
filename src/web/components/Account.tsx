@@ -7,14 +7,16 @@ const link = 'underline decoration-neutral-400 underline-offset-2 hover:text-neu
 export function AccountPanel() {
   const a = useAccount();
   return (
-    <section className="space-y-1 text-sm">
-      <h2 className="font-semibold">Sync</h2>
-      {a.user ? (
-        <p className="text-neutral-600 dark:text-neutral-300">Signed in as <strong>{a.user.name}</strong>{a.syncing ? ' · syncing…' : ' · settings and favorites sync across devices'}. <button onClick={a.signOut} className={link}>Sign out</button></p>
-      ) : (
-        <p className="text-neutral-600 dark:text-neutral-300">Your settings live in this browser only. <button onClick={a.signIn} className={link}>Sign in with GitHub</button> to sync them across devices.</p>
-      )}
-      {a.error && <p className="text-red-700 dark:text-red-400">Sync problem: {a.error}</p>}
+    <section>
+      <h2 className="mb-2 text-sm font-semibold text-neutral-500">Sync</h2>
+      <div className="space-y-1 rounded-lg border border-neutral-200 px-4 py-3 text-sm dark:border-neutral-800">
+        {a.user ? (
+          <p className="text-neutral-600 dark:text-neutral-300">Signed in as <strong>{a.user.name}</strong>{a.syncing ? ' · syncing…' : ' · settings and favorites sync across devices'}. <button onClick={a.signOut} className={link}>Sign out</button></p>
+        ) : (
+          <p className="text-neutral-600 dark:text-neutral-300">Your settings live in this browser only. <button onClick={a.signIn} className={link}>Sign in with GitHub</button> to sync them across devices.</p>
+        )}
+        {a.error && <p className="text-red-700 dark:text-red-400">Sync problem: {a.error}</p>}
+      </div>
     </section>
   );
 }
