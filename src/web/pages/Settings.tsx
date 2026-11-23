@@ -36,18 +36,22 @@ export function Settings({ account }: { account?: ReactNode }) {
         <div className={group}>
           <label className={row}>
             <span>Highlights</span>
-            <select value={state.highlightsCap} onChange={(e) => set({ highlightsCap: Number(e.target.value) })} className="rounded border border-neutral-300 bg-transparent px-2 py-1 text-sm dark:border-neutral-700">
-              {Array.from({ length: 17 }, (_, i) => i + 4).map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
+            <span className="relative">
+              <select value={state.highlightsCap} onChange={(e) => set({ highlightsCap: Number(e.target.value) })}
+                className="h-8 appearance-none rounded-md border border-neutral-300 bg-white/60 pl-3 pr-8 text-sm tabular-nums hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500">
+                {Array.from({ length: 17 }, (_, i) => i + 4).map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-500" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l4 4 4-4" /></svg>
+            </span>
           </label>
           <div className={`${row} flex-wrap`}>
             <span>Filter</span>
-            <div role="radiogroup" aria-label="Digest filter" className="inline-flex gap-0.5 rounded-md border border-neutral-300 p-0.5 dark:border-neutral-700">
+            <div role="radiogroup" aria-label="Digest filter" className="inline-flex h-8 items-stretch rounded-md bg-neutral-200/70 p-0.5 dark:bg-neutral-800">
               {LEVELS.map((l) => {
                 const on = l === level;
                 return (
                   <button key={l.name} type="button" role="radio" aria-checked={on} onClick={() => set({ relevanceThreshold: l.value })}
-                    className={`rounded px-2.5 py-1 text-sm ${on ? 'bg-neutral-200 font-medium text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100'}`}>
+                    className={`rounded-[5px] px-3 text-sm transition-colors ${on ? 'bg-white text-neutral-900 shadow-[0_1px_2px_rgba(0,0,0,0.12)] dark:bg-neutral-600 dark:text-neutral-50' : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'}`}>
                     {l.name}
                   </button>
                 );
